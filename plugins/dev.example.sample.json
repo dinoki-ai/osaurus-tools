@@ -1,0 +1,40 @@
+{
+  "plugin_id": "dev.example.sample",
+  "name": "Sample Plugin",
+  "description": "A sample plugin to demonstrate the specification.",
+  "homepage": "https://github.com/dinoki-ai/osaurus-tools",
+  "license": "MIT",
+  "authors": ["Osaurus Team"],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "sample",
+        "description": "A sample tool capability"
+      }
+    ]
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2025-01-01",
+      "notes": "Initial release",
+      "requires": {
+        "osaurus_min_version": "0.9.0"
+      },
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/v1.0.0/sample.zip",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 10240,
+          "minisign": {
+             "signature": "RWQf6LRCGA9i53ml5If6r...",
+             "key_id": "RWQf6LRCGA9i5..."
+          }
+        }
+      ]
+    }
+  ]
+}
+
