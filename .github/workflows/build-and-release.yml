@@ -89,11 +89,17 @@ jobs:
 
       - name: Sign with Minisign
         id: sign
-        if: ${{ secrets.MINISIGN_SECRET_KEY != '' }}
         env:
           MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
         run: |
+          # Skip if no signing key
+          if [ -z "$MINISIGN_SECRET_KEY" ]; then
+            echo "No MINISIGN_SECRET_KEY configured, skipping signing"
+            echo "minisign_signature=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           TOOL="${{ steps.parse.outputs.tool }}"
           ARTIFACT="${{ steps.build.outputs.artifact_name }}"
 
