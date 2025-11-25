@@ -36,7 +36,7 @@ jobs:
       artifact_name: ${{ steps.build.outputs.artifact_name }}
       sha256: ${{ steps.build.outputs.sha256 }}
       size: ${{ steps.build.outputs.size }}
-      minisign_signature: ${{ steps.sign.outputs.minisign_signature }}
+      minisign_signature_b64: ${{ steps.sign.outputs.minisign_signature_b64 }}
 
     steps:
       - name: Checkout code
@@ -96,7 +96,7 @@ jobs:
           # Skip if no signing key
           if [ -z "$MINISIGN_SECRET_KEY" ]; then
             echo "No MINISIGN_SECRET_KEY configured, skipping signing"
-            echo "minisign_signature=" >> $GITHUB_OUTPUT
+            echo "minisign_signature_b64=" >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -117,9 +117,9 @@ jobs:
             minisign -S -s $RUNNER_TEMP/minisign.key -m "$ARTIFACT" -x "${ARTIFACT}.minisig" -W
           fi
 
-          # Read signature for output
-          SIGNATURE=$(cat "${ARTIFACT}.minisig" | grep -v "^untrusted" | tr -d '\n')
-          echo "minisign_signature=$SIGNATURE" >> $GITHUB_OUTPUT
+          # Read full signature file and base64 encode for safe transport
+          SIGNATURE_B64=$(base64 -i "${ARTIFACT}.minisig")
+          echo "minisign_signature_b64=$SIGNATURE_B64" >> $GITHUB_OUTPUT
 
           # Clean up
           rm -f $RUNNER_TEMP/minisign.key
@@ -183,7 +183,7 @@ jobs:
             - **File:** `${{ needs.build.outputs.artifact_name }}`
             - **SHA256:** `${{ needs.build.outputs.sha256 }}`
             - **Size:** ${{ needs.build.outputs.size }} bytes
-            - **Signed:** ${{ needs.build.outputs.minisign_signature != '' && 'Yes (Minisign)' || 'No' }}
+            - **Signed:** ${{ needs.build.outputs.minisign_signature_b64 != '' && 'Yes (Minisign)' || 'No' }}
 
             ### Manual Installation
 
@@ -227,12 +227,22 @@ jobs:
           SHA256="${{ needs.build.outputs.sha256 }}"
           SIZE="${{ needs.build.outputs.size }}"
           TAG="${{ steps.tag.outputs.tag }}"
-          MINISIGN_SIG="${{ needs.build.outputs.minisign_signature }}"
+          MINISIGN_SIG_B64="${{ needs.build.outputs.minisign_signature_b64 }}"
+
+          # Decode base64 signature if present
+          if [ -n "$MINISIGN_SIG_B64" ]; then
+            MINISIGN_SIG=$(echo "$MINISIGN_SIG_B64" | base64 -d)
+          else
+            MINISIGN_SIG=""
+          fi
 
           REGISTRY_FILE="plugins/${PLUGIN_ID}.json"
 
           # Download URL for the release artifact
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ARTIFACT}"
+
+          # Write signature to temp file for Python to read (preserves newlines)
+          echo "$MINISIGN_SIG" > /tmp/minisign_sig.txt
 
           python3 << EOF
           import json
@@ -245,8 +255,14 @@ jobs:
           size = int("$SIZE")
           url = "$DOWNLOAD_URL"
           registry_file = "$REGISTRY_FILE"
-          minisign_sig = "$MINISIGN_SIG"
           minisign_public_key = os.environ.get("MINISIGN_PUBLIC_KEY", "")
+
+          # Read signature from file to preserve newlines
+          try:
+              with open('/tmp/minisign_sig.txt', 'r') as f:
+                  minisign_sig = f.read().strip()
+          except:
+              minisign_sig = ""
 
           # Load existing registry or create new
           try:
