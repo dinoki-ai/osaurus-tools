@@ -4,7 +4,9 @@
   "description": "Time and date utilities for Osaurus",
   "homepage": "https://github.com/dinoki-ai/osaurus-tools",
   "license": "MIT",
-  "authors": ["Osaurus Team"],
+  "authors": [
+    "Osaurus Team"
+  ],
   "capabilities": {
     "tools": [
       {
@@ -17,7 +19,24 @@
       }
     ]
   },
-  "versions": [],
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2025-11-25",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/time-1.0.0/osaurus.time-1.0.0.zip",
+          "sha256": "5b95d4d268c4c18336924148878355e63fc542fa260e96d1683f7f8b0aba7d3e",
+          "size": 16521,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRUTBNLjKflgtwLz27ruBv+ekz01mTOrAqhD9IjJB/Zc+9HvAXn32vTYI/I0M0Z6v76whpKrpYm3YoeFWTh/WIn8cvFJQjlmE6Qo=\ntrusted comment: timestamp:1764080798\tfile:osaurus.time-1.0.0.zip\thashed\nhzPo3XCi6p4OTmuX6WkRH+fbBx+VTkYoiMSbWwBjqaK7NtacG1DzmMb0YeW8gmK8qjBNd92L10YU2/TnkXncDg=="
+          }
+        }
+      ]
+    }
+  ],
   "public_keys": {
     "minisign": "RWTBNLjKflgtwJIKPYHuGjVNR8Huce4PvIRgLzxsd5DrdvB+I5KjeeC3"
   }
