@@ -4,9 +4,7 @@
   "description": "Git repository utilities for Osaurus",
   "homepage": "https://github.com/dinoki-ai/osaurus-tools",
   "license": "MIT",
-  "authors": [
-    "Osaurus Team"
-  ],
+  "authors": ["Osaurus Team"],
   "capabilities": {
     "tools": [
       {
@@ -27,24 +25,7 @@
       }
     ]
   },
-  "versions": [
-    {
-      "version": "1.0.0",
-      "release_date": "2025-11-25",
-      "artifacts": [
-        {
-          "os": "macos",
-          "arch": "arm64",
-          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/git-1.0.0/osaurus.git-1.0.0.zip",
-          "sha256": "b9cbe5b31a471f524b9411fa31c1fea5447d10ee30343db904878a3f2f3d6c37",
-          "size": 32457,
-          "minisign": {
-            "signature": "RUTBNLjKflgtwE2/ecCKz0UwFuPMCnHKVDYpxrRpE0+0O7EkkSeNDphCAsWpoTwE7JW9zhbA+areiOMEDX/M2MIrTjwGhvmAHgM=trusted comment: timestamp:1764078520\tfile:osaurus.git-1.0.0.zip\thashed/nAdh8mhPQ9xinFatAp5iw32JE7I3zgfp2p2lxwUIhuIAQoX2lhh87wLf93TAe0wYr8dn9uWBfIMlBB6af5fAA=="
-          }
-        }
-      ]
-    }
-  ],
+  "versions": [],
   "public_keys": {
     "minisign": "RWTBNLjKflgtwJIKPYHuGjVNR8Huce4PvIRgLzxsd5DrdvB+I5KjeeC3"
   }

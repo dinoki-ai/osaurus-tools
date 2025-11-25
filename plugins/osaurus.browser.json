@@ -4,9 +4,7 @@
   "description": "Headless browser automation using WebKit WebView",
   "homepage": "https://github.com/dinoki-ai/osaurus-tools",
   "license": "MIT",
-  "authors": [
-    "Osaurus Team"
-  ],
+  "authors": ["Osaurus Team"],
   "capabilities": {
     "tools": [
       {
@@ -55,24 +53,7 @@
       }
     ]
   },
-  "versions": [
-    {
-      "version": "1.0.0",
-      "release_date": "2025-11-25",
-      "artifacts": [
-        {
-          "os": "macos",
-          "arch": "arm64",
-          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.0.0/osaurus.browser-1.0.0.zip",
-          "sha256": "0e35bada104d357e6f891d344c84d62072a61b838f0bac8507a77ffcec9466c9",
-          "size": 60168,
-          "minisign": {
-            "signature": "RUTBNLjKflgtwD+AjNJMjpMEvJJTyx+bhlNPqkOIT8j6lKM1q9dlzTDoKl8bkSWnWvBvwbfvOp/GOTYPXQq6ZDEeaLFDGlMdQgk=trusted comment: timestamp:1764078504\tfile:osaurus.browser-1.0.0.zip\thashedJZmbuhNTNQ7bQjsKbb7h+1gJ2YXPOiLe6sYLREJuKZ5sAg2j/jcZclkO2PvU+B73xDlkVoYhZteTfEYLEoKxCQ=="
-          }
-        }
-      ]
-    }
-  ],
+  "versions": [],
   "public_keys": {
     "minisign": "RWTBNLjKflgtwJIKPYHuGjVNR8Huce4PvIRgLzxsd5DrdvB+I5KjeeC3"
   }
