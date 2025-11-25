@@ -4,7 +4,9 @@
   "description": "HTTP client for fetching web content and making API requests",
   "homepage": "https://github.com/dinoki-ai/osaurus-tools",
   "license": "MIT",
-  "authors": ["Osaurus Team"],
+  "authors": [
+    "Osaurus Team"
+  ],
   "capabilities": {
     "tools": [
       {
@@ -25,5 +27,25 @@
       }
     ]
   },
-  "versions": []
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2025-11-25",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/fetch-1.0.0/osaurus.fetch-1.0.0.zip",
+          "sha256": "07077ae297defc76684d6077c6808ffc6f2bcbe64548fabb565d88076a04660f",
+          "size": 38448,
+          "minisign": {
+            "signature": "RUTBNLjKflgtwIiqdHseqC5gV01oKxADywmxyEz4QaLawTkgOF579YwXK6mgNsT4qnjesGeTpJRFZ9jvfJn5AsQm7954caJP5ww=trusted comment: timestamp:1764078532\tfile:osaurus.fetch-1.0.0.zip\thashedOzM1k3aE7S9Nl4WzL/BwO0Tl2gja1hG/Fc58/+LYkkZdxsv83lheyHpDwOaZFPgkb1Tnkur3+GgF9bNwTrz6AA=="
+          }
+        }
+      ]
+    }
+  ],
+  "public_keys": {
+    "minisign": "RWTBNLjKflgtwJIKPYHuGjVNR8Huce4PvIRgLzxsd5DrdvB+I5KjeeC3"
+  }
 }
