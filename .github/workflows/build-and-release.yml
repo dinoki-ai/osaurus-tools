@@ -109,12 +109,12 @@ jobs:
           # Write secret key to temp file
           echo "$MINISIGN_SECRET_KEY" > $RUNNER_TEMP/minisign.key
 
-          # Sign the zip
+          # Sign the zip (without -H flag to avoid BLAKE2b requirement)
           cd "build/$TOOL"
           if [ -n "$MINISIGN_PASSWORD" ]; then
-            echo "$MINISIGN_PASSWORD" | minisign -S -s $RUNNER_TEMP/minisign.key -m "$ARTIFACT" -x "${ARTIFACT}.minisig"
+            echo "$MINISIGN_PASSWORD" | minisign -Sm "$ARTIFACT" -s $RUNNER_TEMP/minisign.key -x "${ARTIFACT}.minisig"
           else
-            minisign -S -s $RUNNER_TEMP/minisign.key -m "$ARTIFACT" -x "${ARTIFACT}.minisig" -W
+            minisign -Sm "$ARTIFACT" -s $RUNNER_TEMP/minisign.key -x "${ARTIFACT}.minisig" -W
           fi
 
           # Read full signature file and base64 encode for safe transport
