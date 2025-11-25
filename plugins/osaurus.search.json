@@ -4,7 +4,9 @@
   "description": "Web search using DuckDuckGo (no API key required)",
   "homepage": "https://github.com/dinoki-ai/osaurus-tools",
   "license": "MIT",
-  "authors": ["Osaurus Team"],
+  "authors": [
+    "Osaurus Team"
+  ],
   "capabilities": {
     "tools": [
       {
@@ -21,7 +23,24 @@
       }
     ]
   },
-  "versions": [],
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2025-11-25",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/search-1.0.0/osaurus.search-1.0.0.zip",
+          "sha256": "90fd642606c09d3ae6a62ee4c49aa823de73ad6dc2598df011ea5ef31dc49ba4",
+          "size": 38971,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwDVgYqnzgLQZDOqpDXP8P12YQxijqkerhz2vbHUJhJ1x+igUUQk+24vrnvR5oyU9RgYqviCE9XDx8cXakUr8zg4=\ntrusted comment: timestamp:1764090582\tfile:osaurus.search-1.0.0.zip\nnDZyXIOldhx9E8dieM51T9XmsiPxLiH5hR0dw9scTBFbYD9/Afk/6yKiQJQNSMB8mL3HD4YWQYwatStfP1jhDw=="
+          }
+        }
+      ]
+    }
+  ],
   "public_keys": {
     "minisign": "RWTBNLjKflgtwJIKPYHuGjVNR8Huce4PvIRgLzxsd5DrdvB+I5KjeeC3"
   }
