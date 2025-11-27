@@ -242,6 +242,43 @@ private func extractDDGUrl(_ wrappedUrl: String) -> String? {
     return nil
 }
 
+// MARK: - DuckDuckGo VQD Token Helper
+
+/// Get VQD token required for DuckDuckGo image search API
+private func getVQDToken(query: String) -> String? {
+    let searchUrl = "https://duckduckgo.com/?q=\(urlEncode(query))"
+    let result = performRequest(url: searchUrl)
+
+    guard let data = result.data,
+        let html = String(data: data, encoding: .utf8)
+    else {
+        return nil
+    }
+
+    // Look for vqd token in various patterns DDG uses
+    let patterns = [
+        "vqd=['\"]([^'\"]+)['\"]",
+        "vqd=([\\d-]+)",
+        "vqd%3D([^&\"']+)",
+    ]
+
+    for pattern in patterns {
+        if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
+            let range = NSRange(html.startIndex..., in: html)
+            if let match = regex.firstMatch(in: html, range: range),
+                let tokenRange = Range(match.range(at: 1), in: html)
+            {
+                let token = String(html[tokenRange])
+                if !token.isEmpty {
+                    return token
+                }
+            }
+        }
+    }
+
+    return nil
+}
+
 // MARK: - Tool Implementations
 
 private struct SearchTool {
@@ -358,82 +395,77 @@ private struct SearchImagesTool {
 
         let maxResults = input.max_results ?? 10
 
-        // DuckDuckGo images search - use API endpoint
-        var params = "q=\(urlEncode(input.query))"
+        // Step 1: Get VQD token required for image search API
+        guard let vqd = getVQDToken(query: input.query) else {
+            return "{\"error\": \"Failed to get search token from DuckDuckGo\"}"
+        }
 
+        // Step 2: Build the images API URL
+        var apiUrl = "https://duckduckgo.com/i.js?l=wt-wt&o=json&q=\(urlEncode(input.query))&vqd=\(vqd)&p=1"
+
+        // Add size filter
         if let size = input.size {
             let sizeMap = ["small": "Small", "medium": "Medium", "large": "Large", "wallpaper": "Wallpaper"]
             if let mapped = sizeMap[size.lowercased()] {
-                params += "&iaf=size:\(mapped)"
+                apiUrl += "&iaf=size:\(mapped)"
             }
         }
 
+        // Add type filter
         if let type = input.type {
             let typeMap = ["photo": "photo", "clipart": "clipart", "gif": "gif", "transparent": "transparent"]
             if let mapped = typeMap[type.lowercased()] {
-                params += "&iaf=type:\(mapped)"
+                apiUrl += "&iaf=type:\(mapped)"
             }
         }
 
-        // Use DuckDuckGo's image search page
-        let searchUrl = "https://html.duckduckgo.com/html/?q=\(urlEncode(input.query))&iar=images&iax=images&ia=images"
-
-        let result = performRequest(url: searchUrl)
+        // Step 3: Request the images API
+        let result = performRequest(url: apiUrl)
 
         if let error = result.error {
             return "{\"error\": \"\(escapeJSON(error))\"}"
         }
 
-        guard let responseData = result.data,
-            let html = String(data: responseData, encoding: .utf8)
-        else {
+        guard let responseData = result.data else {
             return "{\"error\": \"Failed to get image results\"}"
         }
 
-        // Parse image results - look for image URLs in the HTML
-        var images: [[String: String]] = []
-
-        // Pattern for image results
-        let imgPattern = "<img[^>]*src=\"([^\"]+)\"[^>]*>"
-        if let regex = try? NSRegularExpression(pattern: imgPattern, options: .caseInsensitive) {
-            let range = NSRange(html.startIndex..., in: html)
-            let matches = regex.matches(in: html, range: range)
-
-            for match in matches.prefix(maxResults * 3) {
-                if let urlRange = Range(match.range(at: 1), in: html) {
-                    let imgUrl = String(html[urlRange])
-
-                    // Skip DDG icons and assets
-                    if imgUrl.contains("duckduckgo.com") || imgUrl.contains("assets") {
-                        continue
-                    }
-
-                    images.append([
-                        "thumbnail_url": imgUrl,
-                        "url": imgUrl,
-                    ])
-
-                    if images.count >= maxResults { break }
-                }
-            }
+        // Step 4: Parse JSON response
+        struct ImageAPIResult: Decodable {
+            let image: String?
+            let thumbnail: String?
+            let title: String?
+            let url: String?
+            let width: Int?
+            let height: Int?
         }
 
-        // If we couldn't find images, try the regular search approach
-        if images.isEmpty {
-            let searchResults = parseDDGResults(html: html, maxResults: maxResults)
-            let resultsJSON = searchResults.map { r in
-                "{\"title\": \"\(escapeJSON(r.title))\", \"url\": \"\(escapeJSON(r.url))\"}"
-            }.joined(separator: ",")
+        struct ImageAPIResponse: Decodable {
+            let results: [ImageAPIResult]?
+        }
+
+        guard let apiResponse = try? JSONDecoder().decode(ImageAPIResponse.self, from: responseData),
+            let results = apiResponse.results, !results.isEmpty
+        else {
+            return "{\"results\": [], \"query\": \"\(escapeJSON(input.query))\", \"type\": \"images\", \"count\": 0}"
+        }
+
+        // Step 5: Format the results
+        let limitedResults = Array(results.prefix(maxResults))
+        let imagesJSON = limitedResults.compactMap { img -> String? in
+            guard let imageUrl = img.image else { return nil }
+            let title = img.title ?? ""
+            let sourceUrl = img.url ?? ""
+            let thumbnailUrl = img.thumbnail ?? imageUrl
+            let width = img.width ?? 0
+            let height = img.height ?? 0
+
             return
-                "{\"results\": [\(resultsJSON)], \"query\": \"\(escapeJSON(input.query))\", \"type\": \"images\", \"note\": \"Image URLs not directly available, showing search results\"}"
-        }
-
-        let imagesJSON = images.map { img in
-            "{\"thumbnail_url\": \"\(escapeJSON(img["thumbnail_url"] ?? ""))\", \"url\": \"\(escapeJSON(img["url"] ?? ""))\"}"
+                "{\"title\": \"\(escapeJSON(title))\", \"image_url\": \"\(escapeJSON(imageUrl))\", \"thumbnail_url\": \"\(escapeJSON(thumbnailUrl))\", \"source_url\": \"\(escapeJSON(sourceUrl))\", \"width\": \(width), \"height\": \(height)}"
         }.joined(separator: ",")
 
         return
-            "{\"results\": [\(imagesJSON)], \"query\": \"\(escapeJSON(input.query))\", \"type\": \"images\", \"count\": \(images.count)}"
+            "{\"results\": [\(imagesJSON)], \"query\": \"\(escapeJSON(input.query))\", \"type\": \"images\", \"count\": \(limitedResults.count)}"
     }
 }
 
