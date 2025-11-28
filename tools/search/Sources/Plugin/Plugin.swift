@@ -2,6 +2,55 @@ import Foundation
 
 // MARK: - HTTP Helper
 
+/// User agents to rotate through for requests
+private let userAgents = [
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+]
+
+/// Rate limit detection patterns in HTML responses
+private let rateLimitPatterns = [
+    "you appear to be a bot",
+    "unusual traffic",
+    "rate limit",
+    "too many requests",
+    "please try again later",
+    "captcha",
+    "blocked",
+    "access denied",
+]
+
+/// Check if a response indicates rate limiting
+private func isRateLimited(response: HTTPURLResponse?, data: Data?) -> Bool {
+    // Check HTTP status code
+    if let statusCode = response?.statusCode {
+        if statusCode == 429 || statusCode == 403 || statusCode == 503 {
+            return true
+        }
+    }
+
+    // Check response body for rate limit indicators
+    if let data = data, let html = String(data: data, encoding: .utf8) {
+        let lowercased = html.lowercased()
+        for pattern in rateLimitPatterns {
+            if lowercased.contains(pattern) {
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
+/// Add jitter to a delay to avoid thundering herd
+private func addJitter(to delay: TimeInterval) -> TimeInterval {
+    let jitter = Double.random(in: 0.0...0.5)
+    return delay * (1.0 + jitter)
+}
+
 private func performRequest(
     url: String,
     headers: [String: String]? = nil,
@@ -16,11 +65,12 @@ private func performRequest(
     request.httpMethod = "GET"
     request.timeoutInterval = timeout
 
-    // Set default headers to mimic a browser
-    request.setValue(
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
-    request.setValue("text/html,application/xhtml+xml", forHTTPHeaderField: "Accept")
+    // Set default headers to mimic a browser with random user agent
+    let userAgent = userAgents.randomElement() ?? userAgents[0]
+    request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+    request.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
     request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
+    request.setValue("gzip, deflate, br", forHTTPHeaderField: "Accept-Encoding")
 
     headers?.forEach { key, value in
         request.setValue(value, forHTTPHeaderField: key)
@@ -45,6 +95,61 @@ private func performRequest(
     _ = semaphore.wait(timeout: .now() + timeout + 5)
 
     return (resultData, resultResponse, resultError)
+}
+
+/// Perform request with retry logic and exponential backoff
+private func performRequestWithRetry(
+    url: String,
+    headers: [String: String]? = nil,
+    timeout: TimeInterval = 30,
+    maxRetries: Int = 3
+) -> (data: Data?, response: HTTPURLResponse?, error: String?, rateLimited: Bool) {
+
+    var lastData: Data?
+    var lastResponse: HTTPURLResponse?
+    var lastError: String?
+    var wasRateLimited = false
+
+    for attempt in 0..<maxRetries {
+        let result = performRequest(url: url, headers: headers, timeout: timeout)
+        lastData = result.data
+        lastResponse = result.response
+        lastError = result.error
+
+        // Check for rate limiting
+        if isRateLimited(response: result.response, data: result.data) {
+            wasRateLimited = true
+
+            // Don't retry on last attempt
+            if attempt < maxRetries - 1 {
+                // Exponential backoff: 1s, 2s, 4s with jitter
+                let baseDelay = pow(2.0, Double(attempt))
+                let delay = addJitter(to: baseDelay)
+                Thread.sleep(forTimeInterval: delay)
+                continue
+            }
+        }
+
+        // If we got a successful response (2xx status), return it
+        if let statusCode = result.response?.statusCode, (200..<300).contains(statusCode) {
+            return (result.data, result.response, result.error, false)
+        }
+
+        // If there was a network error, retry with backoff
+        if result.error != nil && attempt < maxRetries - 1 {
+            let baseDelay = pow(2.0, Double(attempt))
+            let delay = addJitter(to: baseDelay)
+            Thread.sleep(forTimeInterval: delay)
+            continue
+        }
+
+        // Got a response (even if not 2xx), return it
+        if result.response != nil {
+            return (result.data, result.response, result.error, wasRateLimited)
+        }
+    }
+
+    return (lastData, lastResponse, lastError, wasRateLimited)
 }
 
 private func escapeJSON(_ s: String) -> String {
@@ -242,6 +347,417 @@ private func extractDDGUrl(_ wrappedUrl: String) -> String? {
     return nil
 }
 
+// MARK: - Search Provider Protocol
+
+/// Result from a search provider
+private struct SearchProviderResult {
+    let results: [SearchResult]
+    let rateLimited: Bool
+    let error: String?
+}
+
+/// Protocol for search providers
+private protocol SearchProvider {
+    var name: String { get }
+    func search(query: String, maxResults: Int, region: String?) -> SearchProviderResult
+    func searchNews(query: String, maxResults: Int, timelimit: String?) -> SearchProviderResult
+}
+
+// MARK: - DuckDuckGo Search Provider
+
+private class DDGSearchProvider: SearchProvider {
+    let name = "DuckDuckGo"
+
+    func search(query: String, maxResults: Int, region: String?) -> SearchProviderResult {
+        let regionCode = region ?? "wt-wt"
+        let searchUrl = "https://html.duckduckgo.com/html/?q=\(urlEncode(query))&kl=\(regionCode)"
+
+        let result = performRequestWithRetry(url: searchUrl)
+
+        if result.rateLimited {
+            return SearchProviderResult(results: [], rateLimited: true, error: "Rate limited by DuckDuckGo")
+        }
+
+        if let error = result.error {
+            return SearchProviderResult(results: [], rateLimited: false, error: error)
+        }
+
+        guard let responseData = result.data,
+            let html = String(data: responseData, encoding: .utf8)
+        else {
+            return SearchProviderResult(results: [], rateLimited: false, error: "Failed to get search results")
+        }
+
+        let results = parseDDGResults(html: html, maxResults: maxResults)
+        return SearchProviderResult(results: results, rateLimited: false, error: nil)
+    }
+
+    func searchNews(query: String, maxResults: Int, timelimit: String?) -> SearchProviderResult {
+        var searchUrl = "https://html.duckduckgo.com/html/?q=\(urlEncode(query))&iar=news"
+        if let timelimit = timelimit {
+            searchUrl += "&df=\(timelimit)"
+        }
+
+        let result = performRequestWithRetry(url: searchUrl)
+
+        if result.rateLimited {
+            return SearchProviderResult(results: [], rateLimited: true, error: "Rate limited by DuckDuckGo")
+        }
+
+        if let error = result.error {
+            return SearchProviderResult(results: [], rateLimited: false, error: error)
+        }
+
+        guard let responseData = result.data,
+            let html = String(data: responseData, encoding: .utf8)
+        else {
+            return SearchProviderResult(results: [], rateLimited: false, error: "Failed to get news results")
+        }
+
+        let results = parseDDGResults(html: html, maxResults: maxResults)
+        return SearchProviderResult(results: results, rateLimited: false, error: nil)
+    }
+}
+
+// MARK: - Brave Search Provider
+
+private class BraveSearchProvider: SearchProvider {
+    let name = "Brave"
+
+    func search(query: String, maxResults: Int, region: String?) -> SearchProviderResult {
+        let searchUrl = "https://search.brave.com/search?q=\(urlEncode(query))&source=web"
+
+        let result = performRequestWithRetry(url: searchUrl)
+
+        if result.rateLimited {
+            return SearchProviderResult(results: [], rateLimited: true, error: "Rate limited by Brave Search")
+        }
+
+        if let error = result.error {
+            return SearchProviderResult(results: [], rateLimited: false, error: error)
+        }
+
+        guard let responseData = result.data,
+            let html = String(data: responseData, encoding: .utf8)
+        else {
+            return SearchProviderResult(results: [], rateLimited: false, error: "Failed to get search results")
+        }
+
+        let results = parseBraveResults(html: html, maxResults: maxResults)
+        return SearchProviderResult(results: results, rateLimited: false, error: nil)
+    }
+
+    func searchNews(query: String, maxResults: Int, timelimit: String?) -> SearchProviderResult {
+        var searchUrl = "https://search.brave.com/news?q=\(urlEncode(query))"
+        if let timelimit = timelimit {
+            // Brave uses freshness parameter: pd (past day), pw (past week), pm (past month)
+            let freshnessMap = ["d": "pd", "w": "pw", "m": "pm"]
+            if let freshness = freshnessMap[timelimit] {
+                searchUrl += "&tf=\(freshness)"
+            }
+        }
+
+        let result = performRequestWithRetry(url: searchUrl)
+
+        if result.rateLimited {
+            return SearchProviderResult(results: [], rateLimited: true, error: "Rate limited by Brave Search")
+        }
+
+        if let error = result.error {
+            return SearchProviderResult(results: [], rateLimited: false, error: error)
+        }
+
+        guard let responseData = result.data,
+            let html = String(data: responseData, encoding: .utf8)
+        else {
+            return SearchProviderResult(results: [], rateLimited: false, error: "Failed to get news results")
+        }
+
+        let results = parseBraveResults(html: html, maxResults: maxResults)
+        return SearchProviderResult(results: results, rateLimited: false, error: nil)
+    }
+
+    private func parseBraveResults(html: String, maxResults: Int) -> [SearchResult] {
+        var results: [SearchResult] = []
+
+        // Brave search results are in <div class="snippet" data-type="web">
+        // with <a class="result-header"> containing the URL and title
+        // and <p class="snippet-description"> containing the snippet
+
+        // Pattern 1: Look for result items with data-type="web"
+        let snippetPattern =
+            "<div[^>]*class=\"[^\"]*snippet[^\"]*\"[^>]*data-type=\"web\"[^>]*>([\\s\\S]*?)</div>\\s*</div>"
+
+        if let snippetRegex = try? NSRegularExpression(pattern: snippetPattern, options: .caseInsensitive) {
+            let range = NSRange(html.startIndex..., in: html)
+            let matches = snippetRegex.matches(in: html, range: range)
+
+            for match in matches.prefix(maxResults) {
+                if let contentRange = Range(match.range(at: 1), in: html) {
+                    let content = String(html[contentRange])
+
+                    // Extract URL and title from result-header link
+                    let headerPattern =
+                        "<a[^>]*class=\"[^\"]*result-header[^\"]*\"[^>]*href=\"([^\"]+)\"[^>]*>([\\s\\S]*?)</a>"
+                    if let headerRegex = try? NSRegularExpression(pattern: headerPattern, options: .caseInsensitive) {
+                        let contentRange = NSRange(content.startIndex..., in: content)
+                        if let headerMatch = headerRegex.firstMatch(in: content, range: contentRange) {
+                            if let urlRange = Range(headerMatch.range(at: 1), in: content),
+                                let titleRange = Range(headerMatch.range(at: 2), in: content)
+                            {
+                                let url = decodeHTMLEntities(String(content[urlRange]))
+                                let title = stripHTML(String(content[titleRange]))
+
+                                // Extract snippet
+                                var snippet = ""
+                                let snippetDescPattern =
+                                    "<p[^>]*class=\"[^\"]*snippet-description[^\"]*\"[^>]*>([\\s\\S]*?)</p>"
+                                if let descRegex = try? NSRegularExpression(
+                                    pattern: snippetDescPattern, options: .caseInsensitive)
+                                {
+                                    if let descMatch = descRegex.firstMatch(in: content, range: contentRange) {
+                                        if let descRange = Range(descMatch.range(at: 1), in: content) {
+                                            snippet = stripHTML(String(content[descRange]))
+                                        }
+                                    }
+                                }
+
+                                if !url.isEmpty && !title.isEmpty {
+                                    results.append(SearchResult(title: title, url: url, snippet: snippet))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: simpler pattern for Brave results
+        if results.isEmpty {
+            // Try to find links with titles in search results
+            let simplePattern = "<a[^>]*href=\"(https?://[^\"]+)\"[^>]*>\\s*<span[^>]*>([^<]+)</span>"
+            if let regex = try? NSRegularExpression(pattern: simplePattern, options: .caseInsensitive) {
+                let range = NSRange(html.startIndex..., in: html)
+                let matches = regex.matches(in: html, range: range)
+
+                for match in matches.prefix(maxResults * 2) {
+                    if let urlRange = Range(match.range(at: 1), in: html),
+                        let titleRange = Range(match.range(at: 2), in: html)
+                    {
+                        let url = String(html[urlRange])
+                        let title = stripHTML(String(html[titleRange]))
+
+                        // Skip Brave internal links
+                        if url.contains("brave.com") && !url.contains("search.brave.com/search") {
+                            continue
+                        }
+
+                        if title.count >= 3 && !url.isEmpty {
+                            results.append(SearchResult(title: title, url: url, snippet: ""))
+                            if results.count >= maxResults { break }
+                        }
+                    }
+                }
+            }
+        }
+
+        return results
+    }
+}
+
+// MARK: - Bing Search Provider
+
+private class BingSearchProvider: SearchProvider {
+    let name = "Bing"
+
+    func search(query: String, maxResults: Int, region: String?) -> SearchProviderResult {
+        let searchUrl = "https://www.bing.com/search?q=\(urlEncode(query))&count=\(maxResults)"
+
+        let result = performRequestWithRetry(url: searchUrl)
+
+        if result.rateLimited {
+            return SearchProviderResult(results: [], rateLimited: true, error: "Rate limited by Bing")
+        }
+
+        if let error = result.error {
+            return SearchProviderResult(results: [], rateLimited: false, error: error)
+        }
+
+        guard let responseData = result.data,
+            let html = String(data: responseData, encoding: .utf8)
+        else {
+            return SearchProviderResult(results: [], rateLimited: false, error: "Failed to get search results")
+        }
+
+        let results = parseBingResults(html: html, maxResults: maxResults)
+        return SearchProviderResult(results: results, rateLimited: false, error: nil)
+    }
+
+    func searchNews(query: String, maxResults: Int, timelimit: String?) -> SearchProviderResult {
+        var searchUrl = "https://www.bing.com/news/search?q=\(urlEncode(query))"
+        if let timelimit = timelimit {
+            // Bing uses qft parameter for time filter
+            let timeMap = ["d": "interval%3d%227%22", "w": "interval%3d%228%22", "m": "interval%3d%229%22"]
+            if let interval = timeMap[timelimit] {
+                searchUrl += "&qft=\(interval)"
+            }
+        }
+
+        let result = performRequestWithRetry(url: searchUrl)
+
+        if result.rateLimited {
+            return SearchProviderResult(results: [], rateLimited: true, error: "Rate limited by Bing")
+        }
+
+        if let error = result.error {
+            return SearchProviderResult(results: [], rateLimited: false, error: error)
+        }
+
+        guard let responseData = result.data,
+            let html = String(data: responseData, encoding: .utf8)
+        else {
+            return SearchProviderResult(results: [], rateLimited: false, error: "Failed to get news results")
+        }
+
+        let results = parseBingNewsResults(html: html, maxResults: maxResults)
+        return SearchProviderResult(results: results, rateLimited: false, error: nil)
+    }
+
+    private func parseBingResults(html: String, maxResults: Int) -> [SearchResult] {
+        var results: [SearchResult] = []
+
+        // Bing results are typically in <li class="b_algo"> elements
+        // with <h2><a href="...">title</a></h2> and <p class="b_lineclamp...">snippet</p>
+
+        // Pattern for Bing organic results
+        let algoPattern = "<li[^>]*class=\"b_algo\"[^>]*>([\\s\\S]*?)</li>"
+
+        if let algoRegex = try? NSRegularExpression(pattern: algoPattern, options: .caseInsensitive) {
+            let range = NSRange(html.startIndex..., in: html)
+            let matches = algoRegex.matches(in: html, range: range)
+
+            for match in matches.prefix(maxResults) {
+                if let contentRange = Range(match.range(at: 1), in: html) {
+                    let content = String(html[contentRange])
+
+                    // Extract URL and title from h2 > a
+                    let linkPattern = "<h2[^>]*>\\s*<a[^>]*href=\"([^\"]+)\"[^>]*>([\\s\\S]*?)</a>"
+                    if let linkRegex = try? NSRegularExpression(pattern: linkPattern, options: .caseInsensitive) {
+                        let contentRange = NSRange(content.startIndex..., in: content)
+                        if let linkMatch = linkRegex.firstMatch(in: content, range: contentRange) {
+                            if let urlRange = Range(linkMatch.range(at: 1), in: content),
+                                let titleRange = Range(linkMatch.range(at: 2), in: content)
+                            {
+                                let url = decodeHTMLEntities(String(content[urlRange]))
+                                let title = stripHTML(String(content[titleRange]))
+
+                                // Skip Bing internal URLs
+                                if url.contains("bing.com") || url.contains("microsoft.com/bing") {
+                                    continue
+                                }
+
+                                // Extract snippet
+                                var snippet = ""
+                                let snippetPattern = "<p[^>]*class=\"[^\"]*b_lineclamp[^\"]*\"[^>]*>([\\s\\S]*?)</p>"
+                                if let snippetRegex = try? NSRegularExpression(
+                                    pattern: snippetPattern, options: .caseInsensitive)
+                                {
+                                    if let snippetMatch = snippetRegex.firstMatch(in: content, range: contentRange) {
+                                        if let snippetRange = Range(snippetMatch.range(at: 1), in: content) {
+                                            snippet = stripHTML(String(content[snippetRange]))
+                                        }
+                                    }
+                                }
+
+                                // Alternative snippet pattern
+                                if snippet.isEmpty {
+                                    let altSnippetPattern =
+                                        "<div[^>]*class=\"[^\"]*b_caption[^\"]*\"[^>]*>([\\s\\S]*?)</div>"
+                                    if let altRegex = try? NSRegularExpression(
+                                        pattern: altSnippetPattern, options: .caseInsensitive)
+                                    {
+                                        if let altMatch = altRegex.firstMatch(in: content, range: contentRange) {
+                                            if let altRange = Range(altMatch.range(at: 1), in: content) {
+                                                snippet = stripHTML(String(content[altRange]))
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if !url.isEmpty && !title.isEmpty {
+                                    results.append(SearchResult(title: title, url: url, snippet: snippet))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: simpler link extraction
+        if results.isEmpty {
+            let simplePattern = "<a[^>]*href=\"(https?://[^\"]+)\"[^>]*h=\"[^\"]*\"[^>]*>([^<]+)</a>"
+            if let regex = try? NSRegularExpression(pattern: simplePattern, options: .caseInsensitive) {
+                let range = NSRange(html.startIndex..., in: html)
+                let matches = regex.matches(in: html, range: range)
+
+                for match in matches.prefix(maxResults * 2) {
+                    if let urlRange = Range(match.range(at: 1), in: html),
+                        let titleRange = Range(match.range(at: 2), in: html)
+                    {
+                        let url = String(html[urlRange])
+                        let title = stripHTML(String(html[titleRange]))
+
+                        // Skip Bing/Microsoft internal links
+                        if url.contains("bing.com") || url.contains("microsoft.com") {
+                            continue
+                        }
+
+                        if title.count >= 3 {
+                            results.append(SearchResult(title: title, url: url, snippet: ""))
+                            if results.count >= maxResults { break }
+                        }
+                    }
+                }
+            }
+        }
+
+        return results
+    }
+
+    private func parseBingNewsResults(html: String, maxResults: Int) -> [SearchResult] {
+        var results: [SearchResult] = []
+
+        // Bing news results are in <div class="news-card"> or similar
+        let newsPattern = "<a[^>]*class=\"[^\"]*title[^\"]*\"[^>]*href=\"([^\"]+)\"[^>]*>([^<]+)</a>"
+
+        if let regex = try? NSRegularExpression(pattern: newsPattern, options: .caseInsensitive) {
+            let range = NSRange(html.startIndex..., in: html)
+            let matches = regex.matches(in: html, range: range)
+
+            for match in matches.prefix(maxResults) {
+                if let urlRange = Range(match.range(at: 1), in: html),
+                    let titleRange = Range(match.range(at: 2), in: html)
+                {
+                    let url = decodeHTMLEntities(String(html[urlRange]))
+                    let title = stripHTML(String(html[titleRange]))
+
+                    if !url.contains("bing.com") && !title.isEmpty {
+                        results.append(SearchResult(title: title, url: url, snippet: ""))
+                    }
+                }
+            }
+        }
+
+        // Fallback to regular results parser
+        if results.isEmpty {
+            results = parseBingResults(html: html, maxResults: maxResults)
+        }
+
+        return results
+    }
+}
+
 // MARK: - DuckDuckGo VQD Token Helper
 
 /// Get VQD token required for DuckDuckGo image search API
@@ -279,6 +795,113 @@ private func getVQDToken(query: String) -> String? {
     return nil
 }
 
+// MARK: - Provider Cascade Helper
+
+/// Result of a cascaded search across multiple providers
+private struct CascadeResult {
+    let results: [SearchResult]
+    let successfulProvider: String?
+    let warning: String?
+    let allFailed: Bool
+}
+
+/// Get ordered list of search providers
+private func getSearchProviders() -> [SearchProvider] {
+    return [
+        DDGSearchProvider(),
+        BraveSearchProvider(),
+        BingSearchProvider(),
+    ]
+}
+
+/// Cascade through providers for web search until one succeeds
+private func cascadeSearch(query: String, maxResults: Int, region: String?) -> CascadeResult {
+    let providers = getSearchProviders()
+    var collectedResults: [SearchResult] = []
+    var failedProviders: [String] = []
+    var successfulProvider: String?
+
+    for provider in providers {
+        let result = provider.search(query: query, maxResults: maxResults, region: region)
+
+        if result.rateLimited {
+            failedProviders.append(provider.name)
+            continue
+        }
+
+        if result.error != nil && result.results.isEmpty {
+            failedProviders.append(provider.name)
+            continue
+        }
+
+        if !result.results.isEmpty {
+            collectedResults = result.results
+            successfulProvider = provider.name
+            break
+        }
+    }
+
+    // Determine warning message
+    var warning: String?
+    if !failedProviders.isEmpty && successfulProvider != nil {
+        warning =
+            "Some search providers were unavailable (\(failedProviders.joined(separator: ", "))). Results may be limited."
+    } else if successfulProvider == nil && !failedProviders.isEmpty {
+        warning = "All search providers are currently unavailable. Please try again later."
+    }
+
+    return CascadeResult(
+        results: collectedResults,
+        successfulProvider: successfulProvider,
+        warning: warning,
+        allFailed: successfulProvider == nil && !failedProviders.isEmpty
+    )
+}
+
+/// Cascade through providers for news search until one succeeds
+private func cascadeNewsSearch(query: String, maxResults: Int, timelimit: String?) -> CascadeResult {
+    let providers = getSearchProviders()
+    var collectedResults: [SearchResult] = []
+    var failedProviders: [String] = []
+    var successfulProvider: String?
+
+    for provider in providers {
+        let result = provider.searchNews(query: query, maxResults: maxResults, timelimit: timelimit)
+
+        if result.rateLimited {
+            failedProviders.append(provider.name)
+            continue
+        }
+
+        if result.error != nil && result.results.isEmpty {
+            failedProviders.append(provider.name)
+            continue
+        }
+
+        if !result.results.isEmpty {
+            collectedResults = result.results
+            successfulProvider = provider.name
+            break
+        }
+    }
+
+    // Determine warning message
+    var warning: String?
+    if !failedProviders.isEmpty && successfulProvider != nil {
+        warning =
+            "Some search providers were unavailable (\(failedProviders.joined(separator: ", "))). Results may be limited."
+    } else if successfulProvider == nil && !failedProviders.isEmpty {
+        warning = "All search providers are currently unavailable. Please try again later."
+    }
+
+    return CascadeResult(
+        results: collectedResults,
+        successfulProvider: successfulProvider,
+        warning: warning,
+        allFailed: successfulProvider == nil && !failedProviders.isEmpty
+    )
+}
+
 // MARK: - Tool Implementations
 
 private struct SearchTool {
@@ -298,34 +921,41 @@ private struct SearchTool {
         }
 
         let maxResults = input.max_results ?? 10
-        let region = input.region ?? "wt-wt"
+        let region = input.region
 
-        // Use DuckDuckGo HTML version (more reliable parsing)
-        let searchUrl = "https://html.duckduckgo.com/html/?q=\(urlEncode(input.query))&kl=\(region)"
+        // Use provider cascade for resilience
+        let cascadeResult = cascadeSearch(query: input.query, maxResults: maxResults, region: region)
 
-        let result = performRequest(url: searchUrl)
-
-        if let error = result.error {
-            return "{\"error\": \"\(escapeJSON(error))\"}"
-        }
-
-        guard let responseData = result.data,
-            let html = String(data: responseData, encoding: .utf8)
-        else {
-            return "{\"error\": \"Failed to get search results\"}"
-        }
-
-        let results = parseDDGResults(html: html, maxResults: maxResults)
-
-        if results.isEmpty {
-            return "{\"results\": [], \"query\": \"\(escapeJSON(input.query))\", \"message\": \"No results found\"}"
-        }
-
-        let resultsJSON = results.map { r in
+        // Build response JSON
+        let resultsJSON = cascadeResult.results.map { r in
             "{\"title\": \"\(escapeJSON(r.title))\", \"url\": \"\(escapeJSON(r.url))\", \"snippet\": \"\(escapeJSON(r.snippet))\"}"
         }.joined(separator: ",")
 
-        return "{\"results\": [\(resultsJSON)], \"query\": \"\(escapeJSON(input.query))\", \"count\": \(results.count)}"
+        var response =
+            "{\"results\": [\(resultsJSON)], \"query\": \"\(escapeJSON(input.query))\", \"count\": \(cascadeResult.results.count)"
+
+        // Add provider info
+        if let provider = cascadeResult.successfulProvider {
+            response += ", \"provider\": \"\(escapeJSON(provider))\""
+        }
+
+        // Add warning if any providers failed
+        if let warning = cascadeResult.warning {
+            response += ", \"warning\": \"\(escapeJSON(warning))\""
+        }
+
+        // Add message for empty results
+        if cascadeResult.results.isEmpty {
+            if cascadeResult.allFailed {
+                response +=
+                    ", \"message\": \"All search providers are currently rate limited. Please try again later.\""
+            } else {
+                response += ", \"message\": \"No results found\""
+            }
+        }
+
+        response += "}"
+        return response
     }
 }
 
@@ -347,32 +977,39 @@ private struct SearchNewsTool {
 
         let maxResults = input.max_results ?? 10
 
-        // DuckDuckGo news search
-        var searchUrl = "https://html.duckduckgo.com/html/?q=\(urlEncode(input.query))&iar=news"
-        if let timelimit = input.timelimit {
-            searchUrl += "&df=\(timelimit)"
-        }
+        // Use provider cascade for resilience
+        let cascadeResult = cascadeNewsSearch(query: input.query, maxResults: maxResults, timelimit: input.timelimit)
 
-        let result = performRequest(url: searchUrl)
-
-        if let error = result.error {
-            return "{\"error\": \"\(escapeJSON(error))\"}"
-        }
-
-        guard let responseData = result.data,
-            let html = String(data: responseData, encoding: .utf8)
-        else {
-            return "{\"error\": \"Failed to get news results\"}"
-        }
-
-        let results = parseDDGResults(html: html, maxResults: maxResults)
-
-        let resultsJSON = results.map { r in
+        // Build response JSON
+        let resultsJSON = cascadeResult.results.map { r in
             "{\"title\": \"\(escapeJSON(r.title))\", \"url\": \"\(escapeJSON(r.url))\", \"snippet\": \"\(escapeJSON(r.snippet))\"}"
         }.joined(separator: ",")
 
-        return
-            "{\"results\": [\(resultsJSON)], \"query\": \"\(escapeJSON(input.query))\", \"type\": \"news\", \"count\": \(results.count)}"
+        var response =
+            "{\"results\": [\(resultsJSON)], \"query\": \"\(escapeJSON(input.query))\", \"type\": \"news\", \"count\": \(cascadeResult.results.count)"
+
+        // Add provider info
+        if let provider = cascadeResult.successfulProvider {
+            response += ", \"provider\": \"\(escapeJSON(provider))\""
+        }
+
+        // Add warning if any providers failed
+        if let warning = cascadeResult.warning {
+            response += ", \"warning\": \"\(escapeJSON(warning))\""
+        }
+
+        // Add message for empty results
+        if cascadeResult.results.isEmpty {
+            if cascadeResult.allFailed {
+                response +=
+                    ", \"message\": \"All search providers are currently rate limited. Please try again later.\""
+            } else {
+                response += ", \"message\": \"No results found\""
+            }
+        }
+
+        response += "}"
+        return response
     }
 }
 
