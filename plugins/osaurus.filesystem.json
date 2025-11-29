@@ -4,7 +4,9 @@
   "description": "Secure file system operations for reading, writing, and managing files and directories",
   "homepage": "https://github.com/dinoki-ai/osaurus-tools",
   "license": "MIT",
-  "authors": ["Osaurus Team"],
+  "authors": [
+    "Osaurus Team"
+  ],
   "capabilities": {
     "tools": [
       {
@@ -41,7 +43,24 @@
       }
     ]
   },
-  "versions": [],
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2025-11-29",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/filesystem-1.0.0/osaurus.filesystem-1.0.0.zip",
+          "sha256": "3e3873e2ca48231c761977d87acc45e0646391dfb889992e784e6977d2b992b6",
+          "size": 52858,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwNB/ZqCi7QWAEngCUDl2u4ATHAzfqL6a+owusoAe04cu9awEIdfv04dOXyL3frEhiewxBAlWM87i68T4IA3KvQo=\ntrusted comment: timestamp:1764415710\tfile:osaurus.filesystem-1.0.0.zip\nhebeStCw5lHLRNEycrx39V46LI5y94db5/QChA3oq1x9QlhyA2cbGEHP2l+XttB5nSq6ephCofSAim2+zQJqBQ=="
+          }
+        }
+      ]
+    }
+  ],
   "public_keys": {
     "minisign": "RWTBNLjKflgtwJIKPYHuGjVNR8Huce4PvIRgLzxsd5DrdvB+I5KjeeC3"
   }
