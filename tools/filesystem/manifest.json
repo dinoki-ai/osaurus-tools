@@ -1,0 +1,174 @@
+{
+  "plugin_id": "osaurus.filesystem",
+  "version": "1.0.0",
+  "description": "Secure file system operations for reading, writing, and managing files and directories",
+  "capabilities": {
+    "tools": [
+      {
+        "id": "read_file",
+        "description": "Read the contents of a file. Returns text content by default, or base64 for binary files.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The absolute or relative path to the file to read"
+            },
+            "encoding": {
+              "type": "string",
+              "description": "File encoding: 'utf8' (default) or 'base64' for binary files"
+            }
+          },
+          "required": ["path"]
+        },
+        "requirements": [],
+        "permission_policy": "ask"
+      },
+      {
+        "id": "write_file",
+        "description": "Write content to a file. Creates the file if it doesn't exist, overwrites if it does.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The absolute or relative path to the file to write"
+            },
+            "content": {
+              "type": "string",
+              "description": "The content to write to the file"
+            },
+            "create_dirs": {
+              "type": "boolean",
+              "description": "If true, create parent directories if they don't exist. Defaults to false."
+            }
+          },
+          "required": ["path", "content"]
+        },
+        "requirements": [],
+        "permission_policy": "ask"
+      },
+      {
+        "id": "list_directory",
+        "description": "List the contents of a directory with file metadata (name, size, type, modified date).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The absolute or relative path to the directory to list"
+            },
+            "recursive": {
+              "type": "boolean",
+              "description": "If true, list contents recursively. Defaults to false."
+            }
+          },
+          "required": ["path"]
+        },
+        "requirements": [],
+        "permission_policy": "ask"
+      },
+      {
+        "id": "create_directory",
+        "description": "Create a new directory.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The absolute or relative path of the directory to create"
+            },
+            "recursive": {
+              "type": "boolean",
+              "description": "If true, create parent directories as needed. Defaults to true."
+            }
+          },
+          "required": ["path"]
+        },
+        "requirements": [],
+        "permission_policy": "ask"
+      },
+      {
+        "id": "delete_file",
+        "description": "Delete a file or directory.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The absolute or relative path to delete"
+            },
+            "recursive": {
+              "type": "boolean",
+              "description": "If true and path is a directory, delete contents recursively. Defaults to false."
+            }
+          },
+          "required": ["path"]
+        },
+        "requirements": [],
+        "permission_policy": "ask"
+      },
+      {
+        "id": "move_file",
+        "description": "Move or rename a file or directory.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string",
+              "description": "The source path of the file or directory to move"
+            },
+            "destination": {
+              "type": "string",
+              "description": "The destination path"
+            }
+          },
+          "required": ["source", "destination"]
+        },
+        "requirements": [],
+        "permission_policy": "ask"
+      },
+      {
+        "id": "search_files",
+        "description": "Search for files matching a glob pattern (e.g., '*.txt', '**/*.json').",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The directory path to search in"
+            },
+            "pattern": {
+              "type": "string",
+              "description": "Glob pattern to match files (e.g., '*.txt', '*.json', 'test_*')"
+            },
+            "recursive": {
+              "type": "boolean",
+              "description": "If true, search recursively in subdirectories. Defaults to true."
+            }
+          },
+          "required": ["path", "pattern"]
+        },
+        "requirements": [],
+        "permission_policy": "ask"
+      },
+      {
+        "id": "get_file_info",
+        "description": "Get detailed metadata about a file or directory (size, permissions, dates, type).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The absolute or relative path to get info for"
+            }
+          },
+          "required": ["path"]
+        },
+        "requirements": [],
+        "permission_policy": "ask"
+      }
+    ]
+  }
+}
+

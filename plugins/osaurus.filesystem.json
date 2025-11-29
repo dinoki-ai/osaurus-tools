@@ -1,0 +1,48 @@
+{
+  "plugin_id": "osaurus.filesystem",
+  "name": "Osaurus Filesystem",
+  "description": "Secure file system operations for reading, writing, and managing files and directories",
+  "homepage": "https://github.com/dinoki-ai/osaurus-tools",
+  "license": "MIT",
+  "authors": ["Osaurus Team"],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "read_file",
+        "description": "Read the contents of a file"
+      },
+      {
+        "name": "write_file",
+        "description": "Write content to a file"
+      },
+      {
+        "name": "list_directory",
+        "description": "List directory contents with metadata"
+      },
+      {
+        "name": "create_directory",
+        "description": "Create a directory"
+      },
+      {
+        "name": "delete_file",
+        "description": "Delete a file or directory"
+      },
+      {
+        "name": "move_file",
+        "description": "Move or rename a file or directory"
+      },
+      {
+        "name": "search_files",
+        "description": "Search for files by glob pattern"
+      },
+      {
+        "name": "get_file_info",
+        "description": "Get file metadata"
+      }
+    ]
+  },
+  "versions": [],
+  "public_keys": {
+    "minisign": "RWTBNLjKflgtwJIKPYHuGjVNR8Huce4PvIRgLzxsd5DrdvB+I5KjeeC3"
+  }
+}
