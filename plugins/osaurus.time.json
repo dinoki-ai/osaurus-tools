@@ -21,6 +21,22 @@
   },
   "versions": [
     {
+      "version": "1.0.2",
+      "release_date": "2025-11-30",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/time-1.0.2/osaurus.time-1.0.2.zip",
+          "sha256": "e0f7f6c668e0ff36e1f1278b7983b709b4c3ea7a4e78d6670bbb9003169bc400",
+          "size": 21855,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwB5qU7BAp12a5DCwKzRtBqsIsQ++GSn3Ffy6reZHuUVMCTmRIPky1IbbX0reY/4pJ4CuqqzxK+aKb4x8LSM3sg4=\ntrusted comment: timestamp:1764507186\tfile:osaurus.time-1.0.2.zip\nvwvLU46qDGrPtnljnIUu0I4/FlXumbhGuLQ1IYFsu4o0lRc00h+BmNT/SYnksGdqWs7PrB+JAQNAMmMBOI/GAw=="
+          }
+        }
+      ]
+    },
+    {
       "version": "1.0.1",
       "release_date": "2025-11-30",
       "artifacts": [
