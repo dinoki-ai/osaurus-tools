@@ -5,12 +5,12 @@ let package = Package(
     name: "OsaurusSearch",
     platforms: [.macOS(.v13)],
     products: [
-        .library(name: "OsaurusSearch", type: .dynamic, targets: ["Plugin"])
+        .library(name: "OsaurusSearch", type: .dynamic, targets: ["OsaurusSearch"])
     ],
     targets: [
         .target(
-            name: "Plugin",
-            path: "Sources/Plugin"
+            name: "OsaurusSearch",
+            path: "Sources/OsaurusSearch"
         )
     ]
 )

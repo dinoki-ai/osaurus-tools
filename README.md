@@ -77,12 +77,12 @@ Your JSON file must adhere to the following structure:
 ### Fields
 
 - **`plugin_id`** (Required): A unique identifier for your plugin in dot-separated format (e.g., `mycompany.mytool`).
-- **`name`** (Optional): Display name of the plugin.
+- **`name`** (Required): Display name of the plugin.
 - **`homepage`** (Optional): URL to the plugin's homepage or repository.
 - **`license`** (Optional): License of the plugin (e.g., "MIT", "Apache-2.0").
 - **`authors`** (Optional): List of author names.
 - **`capabilities`** (Optional): Structural capabilities description (e.g., tools).
-- **`public_keys`** (Optional): Dictionary of public keys for signature verification (if using Minisign).
+- **`public_keys`** (Required): Dictionary of public keys for signature verification (Using Minisign).
 - **`versions`** (Required): List of available versions.
 
 ### Version Entry
@@ -102,7 +102,7 @@ Your JSON file must adhere to the following structure:
 - **`url`** (Required): Direct download URL for the plugin binary/archive.
 - **`sha256`** (Required): SHA-256 checksum of the file at `url`.
 - **`size`** (Optional): File size in bytes.
-- **`minisign`** (Optional): Minisign signature information.
+- **`minisign`** (Required): Minisign signature information.
   - `signature`: The signature string.
   - `key_id`: The key ID used to sign.
 

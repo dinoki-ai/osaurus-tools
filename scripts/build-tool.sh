@@ -148,6 +148,11 @@ build_tool() {
     cp "$dylib_path" "$staging_dir/lib${product_name}.dylib"
     cp "$tool_dir/manifest.json" "$staging_dir/manifest.json"
 
+    # Ad-hoc codesign the dylib (satisfies macOS Gatekeeper requirements)
+    print_info "Ad-hoc signing dylib..."
+    codesign -s - -f "$staging_dir/lib${product_name}.dylib"
+    print_success "Signed: lib${product_name}.dylib"
+
     # Create the zip archive
     local zip_name="${plugin_id}-${version}.zip"
     local zip_path="$build_output/$zip_name"

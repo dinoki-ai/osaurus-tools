@@ -5,12 +5,12 @@ let package = Package(
     name: "OsaurusBrowser",
     platforms: [.macOS(.v13)],
     products: [
-        .library(name: "OsaurusBrowser", type: .dynamic, targets: ["Plugin"])
+        .library(name: "OsaurusBrowser", type: .dynamic, targets: ["OsaurusBrowser"])
     ],
     targets: [
         .target(
-            name: "Plugin",
-            path: "Sources/Plugin",
+            name: "OsaurusBrowser",
+            path: "Sources/OsaurusBrowser",
             linkerSettings: [
                 .linkedFramework("WebKit"),
                 .linkedFramework("AppKit"),
