@@ -29,6 +29,22 @@
   },
   "versions": [
     {
+      "version": "1.0.2",
+      "release_date": "2025-11-30",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/fetch-1.0.2/osaurus.fetch-1.0.2.zip",
+          "sha256": "8110ad611667acfe24bc9b8130a5bbd0b13b67c3753ef515eaa468875da6d7f1",
+          "size": 43874,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwM5RnYSNY9NgXFyPKUQy2sDGZICJwFs5GzhD1qrt/r8Jd4THM06jSXMzEpBP//D9VivUN/pY0Lg3msKafas1Ewk=\ntrusted comment: timestamp:1764507409\tfile:osaurus.fetch-1.0.2.zip\njdA5NDV3p3jYvhiuyFSsRxv6+/kO0PFW9G2n87qP3b+e0l2Cnrz15cuQm8g/iilSK6zerXTMJMFYynDBI9SDAQ=="
+          }
+        }
+      ]
+    },
+    {
       "version": "1.0.1",
       "release_date": "2025-11-30",
       "artifacts": [
