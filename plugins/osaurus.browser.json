@@ -57,6 +57,22 @@
   },
   "versions": [
     {
+      "version": "1.0.2",
+      "release_date": "2025-11-30",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.0.2/osaurus.browser-1.0.2.zip",
+          "sha256": "848778421c0a12c57a33cba2ebef0e691aa7d943063d40097b1afb4fc7193adf",
+          "size": 66161,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwBWXO+Mnyj1WvI+exZpBrDqY9niG0Sx6dyWHhs+xdm2+mxIIAYY5nChnM0a6yxwVSaq5Hlq59/uSCQdmmJ2zNwM=\ntrusted comment: timestamp:1764507393\tfile:osaurus.browser-1.0.2.zip\n4cKKGtQbUHs1Py0jfvvfKCzT4OErz/67XGOLOFkp/WhVOjwhYmrfRYabOgOaubw2RjLe6uVDdJgK44rA+QoTCw=="
+          }
+        }
+      ]
+    },
+    {
       "version": "1.0.1",
       "release_date": "2025-11-30",
       "artifacts": [
