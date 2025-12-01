@@ -33,7 +33,7 @@ osaurus tools install osaurus.filesystem
 
 ## Plugin Specification
 
-Plugins are distributed as a `.dylib` plus `manifest.json` in a zip file.
+Plugins are distributed as a `.dylib` in a zip file. The manifest is embedded in the plugin binary.
 
 ```json
 {
@@ -172,11 +172,10 @@ Build output goes to `build/<tool-name>/`.
    ```
    tools/mytool/
    ├── Package.swift
-   ├── manifest.json
    └── Sources/OsaurusMytool/Plugin.swift
    ```
 
-2. Implement the plugin using the [C ABI](https://github.com/dinoki-ai/osaurus/blob/main/docs/PLUGIN_AUTHORING.md). See existing tools for examples.
+2. Implement the plugin using the [C ABI](https://github.com/dinoki-ai/osaurus/blob/main/docs/PLUGIN_AUTHORING.md). The manifest is embedded directly in `Plugin.swift` via the `get_manifest` function. See existing tools for examples.
 
 3. Build and test:
 

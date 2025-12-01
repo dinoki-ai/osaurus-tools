@@ -7,9 +7,9 @@
 #   ./scripts/release.sh all [version]           Release all tools
 #
 # Examples:
-#   ./scripts/release.sh time                    # Uses version from manifest.json
+#   ./scripts/release.sh time                    # Uses version from Plugin.swift
 #   ./scripts/release.sh time 1.0.0              # Explicit version
-#   ./scripts/release.sh all                     # Release all tools with their manifest versions
+#   ./scripts/release.sh all                     # Release all tools with their Plugin.swift versions
 #   ./scripts/release.sh all 1.0.0               # Release all tools with same version
 #
 
@@ -38,10 +38,10 @@ if [ $# -lt 1 ]; then
     echo "  all            Release all tools in the tools/ directory"
     echo ""
     echo "Options:"
-    echo "  [version]      Override version from manifest.json (e.g., 1.0.0)"
+    echo "  [version]      Override version from Plugin.swift (e.g., 1.0.0)"
     echo ""
     echo "Examples:"
-    echo "  $0 time                    # Release time with version from manifest"
+    echo "  $0 time                    # Release time with version from Plugin.swift"
     echo "  $0 time 1.0.0              # Release time v1.0.0"
     echo "  $0 all                     # Release all tools"
     exit 1
@@ -50,16 +50,18 @@ fi
 TOOL_NAME="$1"
 VERSION_OVERRIDE="${2:-}"
 
-# Get version from manifest
+# Get version from Plugin.swift
 get_version() {
     local tool_dir="$1"
-    python3 -c "import json; print(json.load(open('$tool_dir/manifest.json'))['version'])"
+    local plugin_swift=$(find "$tool_dir/Sources" -name "Plugin.swift" -type f | head -1)
+    grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$plugin_swift" | head -1 | sed 's/.*"\([0-9][0-9.]*\)".*/\1/'
 }
 
-# Get plugin_id from manifest
+# Get plugin_id from Plugin.swift
 get_plugin_id() {
     local tool_dir="$1"
-    python3 -c "import json; print(json.load(open('$tool_dir/manifest.json'))['plugin_id'])"
+    local plugin_swift=$(find "$tool_dir/Sources" -name "Plugin.swift" -type f | head -1)
+    grep -o '"plugin_id"[[:space:]]*:[[:space:]]*"[^"]*"' "$plugin_swift" | head -1 | sed 's/.*"plugin_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/'
 }
 
 # Create and push tag for a single tool
@@ -74,8 +76,9 @@ release_tool() {
         return 1
     fi
     
-    if [ ! -f "$tool_dir/manifest.json" ]; then
-        print_error "manifest.json not found in $tool_dir"
+    local plugin_swift=$(find "$tool_dir/Sources" -name "Plugin.swift" -type f | head -1)
+    if [ -z "$plugin_swift" ] || [ ! -f "$plugin_swift" ]; then
+        print_error "Plugin.swift not found in $tool_dir/Sources"
         return 1
     fi
     
@@ -121,7 +124,7 @@ if [ "$TOOL_NAME" == "all" ]; then
     
     for tool_path in "$ROOT_DIR/tools"/*/; do
         tool=$(basename "$tool_path")
-        if [ -f "$tool_path/manifest.json" ]; then
+        if find "$tool_path/Sources" -name "Plugin.swift" -type f | head -1 | grep -q .; then
             if release_tool "$tool" "$VERSION_OVERRIDE"; then
                 version=$(get_version "$tool_path")
                 TAGS_CREATED+=("${tool}-${version}")

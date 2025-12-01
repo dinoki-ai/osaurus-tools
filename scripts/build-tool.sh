@@ -18,7 +18,7 @@
 # This script:
 # 1. Builds the Swift plugin as a dynamic library
 # 2. Code signs the dylib (Developer ID if CODESIGN_IDENTITY is set, ad-hoc otherwise)
-# 3. Packages the .dylib and manifest.json into a zip
+# 3. Packages the .dylib into a zip
 # 4. Computes SHA256 checksum
 # 5. Outputs build artifacts to build/<tool-name>/
 #
@@ -46,7 +46,7 @@ if [ $# -lt 1 ]; then
     echo "  all            Build all tools in the tools/ directory"
     echo ""
     echo "Options:"
-    echo "  --version      Override version from manifest.json"
+    echo "  --version      Override version from Plugin.swift"
     echo ""
     echo "Examples:"
     echo "  $0 time"
@@ -91,19 +91,21 @@ build_tool() {
         return 1
     fi
 
-    if [ ! -f "$tool_dir/manifest.json" ]; then
-        print_error "manifest.json not found in $tool_dir"
+    # Find Plugin.swift
+    local plugin_swift=$(find "$tool_dir/Sources" -name "Plugin.swift" -type f | head -1)
+    if [ -z "$plugin_swift" ] || [ ! -f "$plugin_swift" ]; then
+        print_error "Plugin.swift not found in $tool_dir/Sources"
         return 1
     fi
 
-    # Extract version from manifest.json if not provided
+    # Extract version from Plugin.swift if not provided
     local version="$version_override"
     if [ -z "$version" ]; then
-        version=$(python3 -c "import json; print(json.load(open('$tool_dir/manifest.json'))['version'])")
+        version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$plugin_swift" | head -1 | sed 's/.*"\([0-9][0-9.]*\)".*/\1/')
     fi
 
-    # Extract plugin_id from manifest.json
-    local plugin_id=$(python3 -c "import json; print(json.load(open('$tool_dir/manifest.json'))['plugin_id'])")
+    # Extract plugin_id from Plugin.swift
+    local plugin_id=$(grep -o '"plugin_id"[[:space:]]*:[[:space:]]*"[^"]*"' "$plugin_swift" | head -1 | sed 's/.*"plugin_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 
     echo ""
     echo "========================================"
@@ -151,7 +153,6 @@ build_tool() {
 
     # Copy artifacts to staging
     cp "$dylib_path" "$staging_dir/lib${product_name}.dylib"
-    cp "$tool_dir/manifest.json" "$staging_dir/manifest.json"
 
     # Code sign the dylib
     local dylib_file="$staging_dir/lib${product_name}.dylib"
