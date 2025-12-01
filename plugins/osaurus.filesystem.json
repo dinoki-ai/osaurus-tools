@@ -45,6 +45,22 @@
   },
   "versions": [
     {
+      "version": "1.0.3",
+      "release_date": "2025-12-01",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/filesystem-1.0.3/osaurus.filesystem-1.0.3.zip",
+          "sha256": "1d08993cddd2f8c37c41a074dbcf3f377ff16d07bf764374b1d3743b57a907b8",
+          "size": 57431,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwMdkduWVcPlMYpQGb/xslJuc08zLBD/FdpCx/088SD/Sa4nK897dF9cjxv31yZppJvzODpKfMBl3s6TXKAXlGAw=\ntrusted comment: timestamp:1764630262\tfile:osaurus.filesystem-1.0.3.zip\nKKfVeMO7U5mZZ0J1ZSCId+BsUwGqmIDoFD23uwuO8cXDcvV454/8W8vJCSDO/Wpg+/w/v0M6QmaD98yk6inPDQ=="
+          }
+        }
+      ]
+    },
+    {
       "version": "1.0.2",
       "release_date": "2025-11-30",
       "artifacts": [
