@@ -1,0 +1,52 @@
+{
+  "plugin_id": "osaurus.calendar",
+  "name": "Calendar",
+  "description": "Interact with macOS Calendar.app - get events, search, create events, and open events",
+  "homepage": "https://github.com/dinoki-ai/osaurus-calendar",
+  "license": "MIT",
+  "authors": [
+    "dinoki-ai"
+  ],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "get_events",
+        "description": "Get calendar events in a specified date range"
+      },
+      {
+        "name": "search_events",
+        "description": "Search for calendar events that match the search text"
+      },
+      {
+        "name": "create_event",
+        "description": "Create a new calendar event"
+      },
+      {
+        "name": "open_event",
+        "description": "Open a specific calendar event in the Calendar app"
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWSAW6A8VcBx/qiH6lnReSCbTsEoqRsuUhuJxgUwSS/5kpIMPd05Uvwj"
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2025-12-03",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "min_macos": "13.0",
+          "url": "https://github.com/dinoki-ai/osaurus-calendar/releases/download/1.0.0/osaurus.calendar-1.0.0.zip",
+          "sha256": "c6c214e0c8d041cad2a7ac6aa3be37c51eb7ffa5d0ebb05b13c7b84798d966de",
+          "size": 43350,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWSAW6A8VcBx/rfAic7eogcdNdl+7XGEMkkzL9r1eEbPsgw9vh+Ot9jp/JErHHrknF4/Vh/Ml/X+3+wrQQSDfaLUj7Na3qA0aw4=\ntrusted comment: timestamp:1764799825\tfile:osaurus.calendar-1.0.0.zip\npwqfnDUrFm6Lz+e7LA2mX2p1lhpD8pvo7vS97cSbjLHtChBUa+BMMyPEfbUaFfoZP17432HegKJBM1IIIBlSAg=="
+          }
+        }
+      ]
+    }
+  ]
+}
