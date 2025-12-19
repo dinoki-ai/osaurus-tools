@@ -1,11 +1,10 @@
 {
   "plugin_id": "osaurus.emacs",
   "name": "Emacs",
+  "description": "Execute Emacs Lisp code in a running Emacs instance via emacsclient",
   "homepage": "https://github.com/dinoki-ai/osaurus-emacs",
   "license": "MIT",
-  "authors": [
-    "dinoki-ai"
-  ],
+  "authors": ["dinoki-ai"],
   "capabilities": {
     "tools": [
       {
@@ -19,18 +18,18 @@
   },
   "versions": [
     {
-      "version": "1.0.0",
-      "release_date": "2025-11-30",
+      "version": "1.0.1",
+      "release_date": "2025-12-19",
       "artifacts": [
         {
           "os": "macos",
           "arch": "arm64",
           "min_macos": "13.0",
-          "url": "https://github.com/dinoki-ai/osaurus-emacs/releases/download/1.0.0/osaurus.emacs-1.0.0.zip",
-          "sha256": "47daaf37ce69f86351858f4f9450e1a8222b3fc01166a891cbeb745096d410b3",
-          "size": 21813,
+          "url": "https://github.com/dinoki-ai/osaurus-emacs/releases/download/1.0.1/osaurus.emacs-1.0.1.zip",
+          "sha256": "09b3d5328a7e7f6e8664196f0dec1a986dc10fefff32fafdb77b84255da6d202",
+          "size": 21304,
           "minisign": {
-            "signature": "untrusted comment: signature from minisign secret key\nRWReb8UOobdnaBqwcP6bCl99gXNt788kWgfx+ks5jffnHdoDIwxy2oGcd9i7wL/RW64iN9Fkf2x5ie6DiA+4kcRY89LoOpZGFQ8=\ntrusted comment: timestamp:1764513687\tfile:osaurus.emacs-1.0.0.zip\npblZhbaztwKEIdVF++CePOU6qSJBPFajNMI75Nnn8Od892ZnLrHgA4u3zFQu2hk5zqEfjJDWy6I1RAPP1/2rAw=="
+            "signature": "untrusted comment: signature from minisign secret key\nRWReb8UOobdnaGlUwr+Rr1IY14wuujJMSl2mdg9eEXJXw/+jPojEybsKyokVuozJWfx8AJjXzR3FRQjvn39rCW582+eGE8x+LA0=\ntrusted comment: timestamp:1766176992\tfile:osaurus.emacs-1.0.1.zip\nEWYE6HLHbXaNwGx0e1cm8CWPIEO4psghgbJapxFJyED7PRKtja80llYvU1c3XLRMXdsk+xMF/bzpFJ80bf3HDA=="
           }
         }
       ]
