@@ -1,0 +1,46 @@
+{
+  "plugin_id": "osaurus.contacts",
+  "name": "Contacts",
+  "description": "Interact with macOS Contacts.app - get phone numbers, find contacts by name or phone",
+  "homepage": "https://github.com/dinoki-ai/osaurus-contacts",
+  "license": "MIT",
+  "authors": ["dinoki-ai"],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "get_all_numbers",
+        "description": "Get all contacts and their phone numbers"
+      },
+      {
+        "name": "find_number",
+        "description": "Find phone numbers for a contact by name"
+      },
+      {
+        "name": "find_contact_by_phone",
+        "description": "Find a contact name by their phone number"
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWTUthDg50o59mjzeW2AD8AOahxswgg2fmFsezvceY1SFxpKVX/IIhaG"
+  },
+  "versions": [
+    {
+      "version": "1.0.1",
+      "release_date": "2025-12-21",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "min_macos": "13.0",
+          "url": "https://github.com/dinoki-ai/osaurus-contacts/releases/download/1.0.1/osaurus.contacts-1.0.1.zip",
+          "sha256": "9ca5f05a35b9723ff5226f8839b71eadc99e94fd31bd20a12bac3ad8dff582b5",
+          "size": 45960,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTUthDg50o59uHLzOkYOHLWQm//AFcc2YR6LS3GD+FC1LSzFZfaeTADybt85XZARUefn2E5vPSB0yzswxRHZS1xXtgKi+fpWgM=\ntrusted comment: timestamp:1766326184\tfile:osaurus.contacts-1.0.1.zip\nS8QuwgkY88Um9a9SQKKJ3dEW9SXtDzA5/UohlL/x45Ps7EJvHHJSuIjgUDAQBTMjbe0f1Gg8MeKOEM36VpNwAA=="
+          }
+        }
+      ]
+    }
+  ]
+}
