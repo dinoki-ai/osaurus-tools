@@ -30,18 +30,18 @@
   },
   "versions": [
     {
-      "version": "1.0.3",
-      "release_date": "2025-12-19",
+      "version": "1.0.4",
+      "release_date": "2025-12-22",
       "artifacts": [
         {
           "os": "macos",
           "arch": "arm64",
           "min_macos": "13.0",
-          "url": "https://github.com/dinoki-ai/osaurus-calendar/releases/download/1.0.3/osaurus.calendar-1.0.3.zip",
-          "sha256": "2f8a050c1203bff9f6fc67c180023644557f41f4d7ee4ffc57f37a9048437372",
-          "size": 50610,
+          "url": "https://github.com/dinoki-ai/osaurus-calendar/releases/download/1.0.4/osaurus.calendar-1.0.4.zip",
+          "sha256": "e1d4215d1ff78f75ca82a9da0905db5e583d3fa77faad6ad84f75d2352644bc2",
+          "size": 51935,
           "minisign": {
-            "signature": "untrusted comment: signature from minisign secret key\nRWSAW6A8VcBx/maZexvDem8lPbb9tVgzJEmBj6/W1yQX7kzUFXgueAHTZDgxtkaJGs3DyuJtiR4Udu/mquJQ8KenwNMzS4gU0AY=\ntrusted comment: timestamp:1766183495\tfile:osaurus.calendar-1.0.3.zip\nN22hk7DSkZDazVQed7hP/pt8Llw/1RNOA3eBuexFTUSx4LG6EdJmjwL0ebRrRiypqT1+NFSTqM1yf6hCzjbXAA=="
+            "signature": "untrusted comment: signature from minisign secret key\nRWSAW6A8VcBx/pUQu2hGDhGN4s8EjjOrnd7TTgI04xZ7RO60+cMadZ3AjchhxXqbq6RbtM9P7PGodMtxMLXFT9tvxOrKokMGaAs=\ntrusted comment: timestamp:1766405963\tfile:osaurus.calendar-1.0.4.zip\n6j2C5zONXOgkwdPJBXKYu+/4fN87smEzDNRHdkUXHmlrj0h5gFg1pvOFLE+j0F0eLJDaWDX3JPoruVw6FAFiCg=="
           }
         }
       ]
