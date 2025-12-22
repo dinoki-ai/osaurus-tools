@@ -1,0 +1,48 @@
+{
+  "plugin_id": "osaurus.notes",
+  "name": "Apple Notes",
+  "description": "Integration with Apple Notes - list, search, and create notes.",
+  "homepage": "https://github.com/dinoki-ai/osaurus-notes",
+  "license": "MIT",
+  "authors": [
+    "dinoki-ai"
+  ],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "list_notes",
+        "description": "Get all notes from Notes app (limited count)"
+      },
+      {
+        "name": "search_notes",
+        "description": "Find notes by search text"
+      },
+      {
+        "name": "create_note",
+        "description": "Create a new note"
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWRdaSQL/7fTgV8CM7jpibm/qAB2iYFBsPLjH2x9s+x5ZtWT+RjpJWpU"
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2025-12-22",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "min_macos": "13.0",
+          "url": "https://github.com/dinoki-ai/osaurus-notes/releases/download/1.0.0/osaurus.notes-1.0.0.zip",
+          "sha256": "01d9f65dd3b53ea5c5cb0182a7523c7dd2cb0c50e715dfc8ae561c6d9f33d9e0",
+          "size": 48900,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWRdaSQL/7fTgU9KZaQVHngFPKTFRTyLvOO/OstICab/AS5z4zA+KNUa5w1cZocMsYki7m0i4n0oxxuIuxMuZAG5fIc7sBuuAQQ=\ntrusted comment: timestamp:1766433220\tfile:osaurus.notes-1.0.0.zip\nD2aHXMv64WgsfHDIt2EWvTuw2VqIIcNebkmxUjtyKwzMhhMgQJUjjJzRY5I8WwOxByWkWJTBs/bikrKnRIjcBg=="
+          }
+        }
+      ]
+    }
+  ]
+}

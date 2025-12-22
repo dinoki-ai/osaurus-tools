@@ -1,0 +1,68 @@
+{
+  "plugin_id": "osaurus.maps",
+  "name": "Maps",
+  "description": "Interact with Apple Maps - search locations, get directions, and manage guides",
+  "homepage": "https://github.com/dinoki-ai/osaurus-maps",
+  "license": "MIT",
+  "authors": [
+    "dinoki-ai"
+  ],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "maps_search_locations",
+        "description": "Search for locations on Apple Maps"
+      },
+      {
+        "name": "maps_save_location",
+        "description": "Save a location to favorites in Apple Maps"
+      },
+      {
+        "name": "maps_get_directions",
+        "description": "Get directions between two locations"
+      },
+      {
+        "name": "maps_drop_pin",
+        "description": "Drop a pin at a specific location"
+      },
+      {
+        "name": "maps_list_guides",
+        "description": "List guides (opens Guides view)"
+      },
+      {
+        "name": "maps_add_to_guide",
+        "description": "Add a location to a guide"
+      },
+      {
+        "name": "maps_create_guide",
+        "description": "Create a new guide"
+      },
+      {
+        "name": "maps_get_current_location",
+        "description": "Get the user current location"
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWQ7C4tF5waprfR0UQX75MwYAahE9M74SuaZxGgBtXOhguN9v41fj+IU"
+  },
+  "versions": [
+    {
+      "version": "1.0.1",
+      "release_date": "2025-12-22",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "min_macos": "13.0",
+          "url": "https://github.com/dinoki-ai/osaurus-maps/releases/download/1.0.1/osaurus.maps-1.0.1.zip",
+          "sha256": "e749958ca06daedf2013c7f6a0f3479f4e43af55f2d65d47a07145f187d5b414",
+          "size": 90450,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWQ7C4tF5waprZ9h42deHNLT4s0TFEiA/J8IPB+nlKqlQRzGTQQKjCe17CQSuTNzmY0Bx1D2eyQ6SXIzr48wSVU4XOcvcVe8Xw8=\ntrusted comment: timestamp:1766437323\tfile:osaurus.maps-1.0.1.zip\nNXkTIn0uzribTrT1Ilrj32QRcsDfVzZJHc4t4FHmH86/puElQteX0q9dSxgTMyQ5kD9YaRq6kXTjWNru0ZkLAw=="
+          }
+        }
+      ]
+    }
+  ]
+}

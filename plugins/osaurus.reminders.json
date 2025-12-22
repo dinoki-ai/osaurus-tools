@@ -1,0 +1,71 @@
+{
+  "plugin_id": "osaurus.reminders",
+  "name": "Reminders",
+  "description": "Interact with macOS Reminders.app - get reminders, search, create reminders, and manage lists",
+  "homepage": "https://github.com/dinoki-ai/osaurus-reminders",
+  "license": "MIT",
+  "authors": [
+    "dinoki-ai"
+  ],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "get_reminders",
+        "description": "Get reminders, optionally filtering by list, status, or date range",
+        "requirements": [
+          "reminders"
+        ]
+      },
+      {
+        "name": "search_reminders",
+        "description": "Search reminders by title or notes",
+        "requirements": [
+          "reminders"
+        ]
+      },
+      {
+        "name": "create_reminder",
+        "description": "Create a new reminder",
+        "requirements": [
+          "reminders"
+        ]
+      },
+      {
+        "name": "get_lists",
+        "description": "Get all reminder lists",
+        "requirements": [
+          "reminders"
+        ]
+      },
+      {
+        "name": "open_reminder",
+        "description": "Open the Reminders app, optionally to a specific reminder",
+        "requirements": [
+          "automation"
+        ]
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWREzUdfZma6Lk52oRbPU9Z1N0lOWWYHoJOzOcl3sb3IomH7WBIj3gVN"
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2025-12-22",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "min_macos": "13.0",
+          "url": "https://github.com/dinoki-ai/osaurus-reminders/releases/download/1.0.0/osaurus.reminders-1.0.0.zip",
+          "sha256": "8a3af449cdd3a8dfdfa9a1a3861680c001ad34b7dd824889cbb9d480e80bbab6",
+          "size": 63397,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWREzUdfZma6LonyjI+flcQAE6iBBm6xAhffXN7pPEN99cWy0ZiBe42y+ukw5HAF34Mqoszm/HkMvUnFfTSU8xB9Gp41pIMt5Ao=\ntrusted comment: timestamp:1766433183\tfile:osaurus.reminders-1.0.0.zip\navTs27ts4/rzNYPub7r/m0aOZ0ifWZoVf697qjo9vXzaxcSXso16cL558tui3XBQTXXXyBxLEb6/C7qsO5QLDQ=="
+          }
+        }
+      ]
+    }
+  ]
+}
