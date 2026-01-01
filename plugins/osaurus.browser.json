@@ -4,7 +4,9 @@
   "description": "Agent-friendly headless browser with ref-based interactions. Navigate to pages, get a snapshot of interactive elements, then interact using element refs.",
   "homepage": "https://github.com/dinoki-ai/osaurus-tools",
   "license": "MIT",
-  "authors": ["Osaurus Team"],
+  "authors": [
+    "Osaurus Team"
+  ],
   "capabilities": {
     "tools": [
       {
@@ -54,6 +56,22 @@
     ]
   },
   "versions": [
+    {
+      "version": "1.1.0",
+      "release_date": "2026-01-01",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.1.0/osaurus.browser-1.1.0.zip",
+          "sha256": "d66addfabd384c6b2d26738c100de4032d74b0ddd8a83429e9cb5487b46a05eb",
+          "size": 84678,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwOwodP8mHiM0g3GpLI5GblsOnV0wnCrVVQUFozOqdXCQEFTeS0G2NSxmAgIn2W4DADG17STjjnvrQE7JIwh7OQ4=\ntrusted comment: timestamp:1767309858\tfile:osaurus.browser-1.1.0.zip\n6m4jqd7Xf8m9FUI9a/O3J7gdfiT5hr9+CrH8Zc54UgPzW9lQJCkl3T6t0gSD2X1JHyUBRwW6B5ohYiSwA1vhAw=="
+          }
+        }
+      ]
+    },
     {
       "version": "1.0.2",
       "release_date": "2025-11-30",
