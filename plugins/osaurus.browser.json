@@ -1,57 +1,55 @@
 {
   "plugin_id": "osaurus.browser",
   "name": "Osaurus Browser",
-  "description": "Headless browser automation using WebKit WebView",
+  "description": "Agent-friendly headless browser with ref-based interactions. Navigate to pages, get a snapshot of interactive elements, then interact using element refs.",
   "homepage": "https://github.com/dinoki-ai/osaurus-tools",
   "license": "MIT",
-  "authors": [
-    "Osaurus Team"
-  ],
+  "authors": ["Osaurus Team"],
   "capabilities": {
     "tools": [
       {
         "name": "browser_navigate",
-        "description": "Navigate to a URL and wait for the page to load"
+        "description": "Navigate to a URL. Use wait_until='networkidle' for SPAs that load content dynamically."
       },
       {
-        "name": "browser_get_content",
-        "description": "Get the text content of the page or a specific element"
-      },
-      {
-        "name": "browser_get_html",
-        "description": "Get the HTML of the page or a specific element"
-      },
-      {
-        "name": "browser_execute_script",
-        "description": "Execute JavaScript in the current page"
+        "name": "browser_snapshot",
+        "description": "Get a structured list of interactive elements. CALL THIS FIRST after navigating. Returns element refs (E1, E2...) to use in click/type/select. Use filter to narrow down element types."
       },
       {
         "name": "browser_click",
-        "description": "Click an element on the page"
+        "description": "Click an element using its ref from browser_snapshot (e.g., ref='E5')."
       },
       {
         "name": "browser_type",
-        "description": "Type text into an input element"
+        "description": "Type text into an input using its ref. Set submit=true to press Enter after typing."
       },
       {
         "name": "browser_select",
-        "description": "Select an option from a dropdown"
+        "description": "Select option(s) in a dropdown by value or visible text."
+      },
+      {
+        "name": "browser_hover",
+        "description": "Hover over an element to reveal menus, tooltips, or trigger hover states."
+      },
+      {
+        "name": "browser_scroll",
+        "description": "Scroll the page by direction (up/down/left/right), to an element ref, or to x/y coordinates."
+      },
+      {
+        "name": "browser_press_key",
+        "description": "Press a keyboard key (Enter, Escape, Tab, arrows) optionally with modifiers (ctrl, shift, alt, cmd)."
+      },
+      {
+        "name": "browser_wait_for",
+        "description": "Wait for text to appear, text to disappear, or for a specified number of seconds."
       },
       {
         "name": "browser_screenshot",
-        "description": "Take a screenshot of the current page"
+        "description": "Take a screenshot for visual debugging. Use full_page=true for the entire scrollable page."
       },
       {
-        "name": "browser_get_url",
-        "description": "Get the current page URL"
-      },
-      {
-        "name": "browser_get_title",
-        "description": "Get the current page title"
-      },
-      {
-        "name": "browser_wait",
-        "description": "Wait for an element to appear"
+        "name": "browser_execute_script",
+        "description": "Execute arbitrary JavaScript. Use as escape hatch for edge cases not covered by other tools."
       }
     ]
   },
