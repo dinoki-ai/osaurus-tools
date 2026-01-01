@@ -4,14 +4,14 @@ Central registry for community tools and plugins for [Osaurus](https://github.co
 
 ## Official System Tools
 
-| Plugin ID            | Description                        | Tools                                                                                                                                                          |
-| -------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `osaurus.time`       | Time and date utilities            | `current_time`, `format_date`                                                                                                                                  |
-| `osaurus.git`        | Git repository utilities           | `git_status`, `git_log`, `git_diff`, `git_branch`                                                                                                              |
-| `osaurus.browser`    | Headless WebKit browser automation | `browser_navigate`, `browser_get_content`, `browser_get_html`, `browser_execute_script`, `browser_click`, `browser_type`, `browser_screenshot`, `browser_wait` |
-| `osaurus.fetch`      | HTTP client for web requests       | `fetch`, `fetch_json`, `fetch_html`, `download`                                                                                                                |
-| `osaurus.search`     | Web search via DuckDuckGo          | `search`, `search_news`, `search_images`                                                                                                                       |
-| `osaurus.filesystem` | File system operations             | `read_file`, `write_file`, `list_directory`, `create_directory`, `delete_file`, `move_file`, `search_files`, `get_file_info`                                   |
+| Plugin ID            | Description                            | Tools                                                                                                                                                            |
+| -------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `osaurus.time`       | Time and date utilities                | `current_time`, `format_date`                                                                                                                                    |
+| `osaurus.git`        | Git repository utilities               | `git_status`, `git_log`, `git_diff`, `git_branch`                                                                                                                |
+| `osaurus.browser`    | Agent-friendly headless WebKit browser | `browser_navigate`, `browser_snapshot`, `browser_click`, `browser_type`, `browser_select`, `browser_hover`, `browser_scroll`, `browser_press_key`, `browser_wait_for`, `browser_screenshot`, `browser_execute_script` |
+| `osaurus.fetch`      | HTTP client for web requests           | `fetch`, `fetch_json`, `fetch_html`, `download`                                                                                                                  |
+| `osaurus.search`     | Web search via DuckDuckGo              | `search`, `search_news`, `search_images`                                                                                                                         |
+| `osaurus.filesystem` | File system operations                 | `read_file`, `write_file`, `list_directory`, `create_directory`, `delete_file`, `move_file`, `search_files`, `get_file_info`                                    |
 
 ### Installation
 
