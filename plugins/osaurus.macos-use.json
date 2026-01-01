@@ -1,33 +1,67 @@
 {
   "plugin_id": "osaurus.macos-use",
   "name": "macOS Use",
-  "description": "Control macOS applications via accessibility APIs - click, type, press keys, and traverse UI elements",
+  "description": "Efficient macOS automation via accessibility APIs - element-based interactions, smart filtering, and decoupled actions/observations for minimal context usage",
   "homepage": "https://github.com/dinoki-ai/osaurus-macos-use",
   "license": "MIT",
-  "authors": [
-    "dinoki-ai"
-  ],
+  "authors": ["dinoki-ai"],
   "capabilities": {
     "tools": [
       {
-        "name": "open_application_and_traverse",
-        "description": "Opens or activates a specified application and then traverses its accessibility tree."
+        "name": "open_application",
+        "description": "Opens or activates an application by name, bundle ID, or path. Returns the app's PID."
       },
       {
-        "name": "click_and_traverse",
-        "description": "Simulates a mouse click at specific coordinates within the window of the target application and then traverses its accessibility tree."
+        "name": "get_ui_elements",
+        "description": "Traverses the accessibility tree and returns interactive UI elements with assigned IDs. Use these IDs with click_element/focus_element."
       },
       {
-        "name": "type_and_traverse",
-        "description": "Simulates typing text into the target application and then traverses its accessibility tree."
+        "name": "get_active_window",
+        "description": "Returns information about the currently active window including PID, app name, title, and bounds."
       },
       {
-        "name": "press_key_and_traverse",
-        "description": "Simulates pressing a specific keyboard key with optional modifier keys, then traverses the accessibility tree."
+        "name": "click_element",
+        "description": "Clicks an element by its ID (from get_ui_elements). Uses AXPress action when available, falls back to coordinate click."
       },
       {
-        "name": "refresh_traversal",
-        "description": "Only performs the accessibility tree traversal for the specified application. Useful for getting the current UI state without performing an action."
+        "name": "focus_element",
+        "description": "Focuses an element by its ID. Useful for text fields before typing."
+      },
+      {
+        "name": "click",
+        "description": "Clicks at raw screen coordinates. Use click_element instead when possible for better reliability."
+      },
+      {
+        "name": "type_text",
+        "description": "Types text into the currently focused element."
+      },
+      {
+        "name": "press_key",
+        "description": "Presses a keyboard key with optional modifiers."
+      },
+      {
+        "name": "scroll",
+        "description": "Scrolls in the specified direction."
+      },
+      {
+        "name": "list_displays",
+        "description": "Lists all connected displays with their positions and dimensions. Useful for multi-monitor setups."
+      },
+      {
+        "name": "take_screenshot",
+        "description": "Captures a screenshot with multi-monitor support. Can capture main display, specific display by index, all displays combined, or a specific window."
+      },
+      {
+        "name": "click_element_and_observe",
+        "description": "Clicks an element and returns the updated UI state. Convenience method combining click_element + get_ui_elements."
+      },
+      {
+        "name": "type_and_observe",
+        "description": "Types text and returns the updated UI state. Convenience method combining type_text + get_ui_elements."
+      },
+      {
+        "name": "press_key_and_observe",
+        "description": "Presses a key and returns the updated UI state. Convenience method combining press_key + get_ui_elements."
       }
     ]
   },
@@ -36,18 +70,18 @@
   },
   "versions": [
     {
-      "version": "1.0.0",
-      "release_date": "2025-12-02",
+      "version": "1.1.1",
+      "release_date": "2026-01-01",
       "artifacts": [
         {
           "os": "macos",
           "arch": "arm64",
           "min_macos": "13.0",
-          "url": "https://github.com/dinoki-ai/osaurus-macos-use/releases/download/1.0.0/osaurus.macos-use-1.0.0.zip",
-          "sha256": "84f615256b017d6f3d2cbb7646501ef79670c5c7a228cfd06c89570af3b10ed2",
-          "size": 229854,
+          "url": "https://github.com/dinoki-ai/osaurus-macos-use/releases/download/1.1.1/osaurus.macos-use-1.1.1.zip",
+          "sha256": "98134a3ddba531404266d2bad359eab3e7d5d089179d7176c726fbae57c69b8f",
+          "size": 128607,
           "minisign": {
-            "signature": "untrusted comment: signature from minisign secret key\nRWRh6pAWTUF1v68TJ6zeakLg0BJXhsbDLbanVbXRJemk4uY66/u3vkvcnvQHWKbbfreNkp7VhUW06mkXgy6JHy7QPv6L02X8Fgw=\ntrusted comment: timestamp:1764711136\tfile:osaurus.macos-use-1.0.0.zip\nUd0+zgUY9SofZfuSttocWLTkxB92mMK6OlcOFQpyzL/eOaKZXiXg0BZXKXwcB8TWaEMcKiw+Z/x5CxWaop84Cg=="
+            "signature": "untrusted comment: signature from minisign secret key\nRWRh6pAWTUF1v2rRlE5qp/QBB1sE1ODHSXRlFx32bbJhRpXJvfbv4h3wGd33cIKT7y+xgKp4eHbqU2C9B5zOYjB/wm2UKuAP8Qc=\ntrusted comment: timestamp:1767308297\tfile:osaurus.macos-use-1.1.1.zip\nMF2RtTx3H9sKZ3pN0p9U9evkk0Cz4Zzq2Lpn5CQ+/mBju4mw6aW66aFILptpf2VXYpE17up1WG4wIPMJEeisCA=="
           }
         }
       ]
