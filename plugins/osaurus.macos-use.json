@@ -49,7 +49,7 @@
       },
       {
         "name": "take_screenshot",
-        "description": "Captures a screenshot with multi-monitor support. Can capture main display, specific display by index, all displays combined, or a specific window."
+        "description": "Captures a screenshot with multi-monitor support. Can capture main display, specific display by index, all displays combined, or a specific window. Use savePath to save to file instead of returning base64 (avoids token limits). Defaults: format=jpeg, quality=0.7, scale=0.5."
       },
       {
         "name": "click_element_and_observe",
@@ -70,18 +70,18 @@
   },
   "versions": [
     {
-      "version": "1.1.1",
-      "release_date": "2026-01-01",
+      "version": "1.1.2",
+      "release_date": "2026-01-02",
       "artifacts": [
         {
           "os": "macos",
           "arch": "arm64",
           "min_macos": "13.0",
-          "url": "https://github.com/dinoki-ai/osaurus-macos-use/releases/download/1.1.1/osaurus.macos-use-1.1.1.zip",
-          "sha256": "98134a3ddba531404266d2bad359eab3e7d5d089179d7176c726fbae57c69b8f",
-          "size": 128607,
+          "url": "https://github.com/dinoki-ai/osaurus-macos-use/releases/download/1.1.2/osaurus.macos-use-1.1.2.zip",
+          "sha256": "491e65019ac2ac2af6684847a592a82679ee53955b34bfa5ce941212b774b744",
+          "size": 129334,
           "minisign": {
-            "signature": "untrusted comment: signature from minisign secret key\nRWRh6pAWTUF1v2rRlE5qp/QBB1sE1ODHSXRlFx32bbJhRpXJvfbv4h3wGd33cIKT7y+xgKp4eHbqU2C9B5zOYjB/wm2UKuAP8Qc=\ntrusted comment: timestamp:1767308297\tfile:osaurus.macos-use-1.1.1.zip\nMF2RtTx3H9sKZ3pN0p9U9evkk0Cz4Zzq2Lpn5CQ+/mBju4mw6aW66aFILptpf2VXYpE17up1WG4wIPMJEeisCA=="
+            "signature": "untrusted comment: signature from minisign secret key\nRWRh6pAWTUF1vwWBMo536fBjV+ZD5n09xV8Djq0pi+2d678NApbgh/3dj46KCoUpzLm08i5YhTJd0CwXcAja1MSRS4OoSGbs/g8=\ntrusted comment: timestamp:1767356692\tfile:osaurus.macos-use-1.1.2.zip\nti6m4rC+u9EacVHHIdWc8Wsf1lcnu9jbLAcA3SXsgyKLobHC190N71MZqJolfoWDHhWEZTnyhTc6BacJZ2/KCw=="
           }
         }
       ]
