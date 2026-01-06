@@ -49,7 +49,7 @@
       },
       {
         "name": "take_screenshot",
-        "description": "Captures a screenshot with multi-monitor support. Returns images in MCP ImageContent format (type, data, mimeType) for vision model support. Can capture main display, specific display by index, all displays combined, or a specific window. Use savePath to save to file instead of returning base64. Defaults: format=jpeg, quality=0.7, scale=0.5."
+        "description": "Captures a screenshot with multi-monitor support. Returns MCP CallToolResult format with content array containing ImageContent for vision model support. Can capture main display, specific display by index, all displays combined, or a specific window. Use savePath to save to file instead of returning base64. Defaults: format=jpeg, quality=0.7, scale=0.5."
       },
       {
         "name": "click_element_and_observe",
@@ -70,18 +70,18 @@
   },
   "versions": [
     {
-      "version": "1.1.3",
+      "version": "1.1.4",
       "release_date": "2026-01-06",
       "artifacts": [
         {
           "os": "macos",
           "arch": "arm64",
           "min_macos": "13.0",
-          "url": "https://github.com/dinoki-ai/osaurus-macos-use/releases/download/1.1.3/osaurus.macos-use-1.1.3.zip",
-          "sha256": "afcb1a0b5c47e79f247697ab9d443f7a8b1aa5631494227bdc120dde258a8c7e",
-          "size": 129656,
+          "url": "https://github.com/dinoki-ai/osaurus-macos-use/releases/download/1.1.4/osaurus.macos-use-1.1.4.zip",
+          "sha256": "53252a26fbc59f7a22279e4a6d5ca4da35c5d296b8b3237953b0cb01e4ea1720",
+          "size": 135725,
           "minisign": {
-            "signature": "untrusted comment: signature from minisign secret key\nRWRh6pAWTUF1vw/c0cFgIjd0tOSza68vcmMJFhDctzse1gIx1LEi4c1Rey2/r+2ejVdIfsmEHAruT/tynD+mcQS5iDIFkIh8tAA=\ntrusted comment: timestamp:1767735417\tfile:osaurus.macos-use-1.1.3.zip\n+M0IZYXv/nIWCI20fRJgCXi7CW4PEOwDF9wnl42SxdjZ0QPe22sNKU1JKycePqZmSs4QU6CW7dDRq26c4IhNDQ=="
+            "signature": "untrusted comment: signature from minisign secret key\nRWRh6pAWTUF1v4ZBP3zSP4nmgvSdxmgHyc2x+AK2Zl6FHbljo5UhpQiH4Z+Kl+XoB6m9W2hqNV7wzHTCzu5YZqULV7Uo2S9FJQ4=\ntrusted comment: timestamp:1767736600\tfile:osaurus.macos-use-1.1.4.zip\nM3XrLNz1K6zDkkgbklDWo0Y8O2lZjdHFMV6IVG2RQQK6moQCuhJuRiz32L5YZHMJDxijW+mtUj3xOvUX15h6Aw=="
           }
         }
       ]
