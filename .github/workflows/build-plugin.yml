@@ -87,8 +87,7 @@ jobs:
 
       - name: Install Osaurus CLI
         run: |
-          curl -fsSL https://github.com/dinoki-ai/osaurus/releases/latest/download/osaurus-macos-arm64.tar.gz | tar xz
-          sudo mv osaurus /usr/local/bin/
+          brew install --cask osaurus
 
       - name: Extract manifest from dylib
         id: extract
