@@ -148,6 +148,81 @@ Add to your plugin spec:
 - Public key contents → `public_keys.minisign`
 - Signature contents → `versions[].artifacts[].minisign.signature`
 
+## Publishing a Plugin
+
+Use the reusable workflow to automatically build, sign, release, and register your plugin.
+
+### 1. Manifest Requirements
+
+Your plugin's `get_manifest()` function must return valid JSON with these fields:
+
+| Field                 | Required | Description                                      |
+| --------------------- | -------- | ------------------------------------------------ |
+| `plugin_id`           | Yes      | Unique identifier (e.g., `myname.weather`)       |
+| `version`             | Yes      | Semantic version (e.g., `1.0.0`)                 |
+| `description`         | Yes      | Brief description of what the plugin does        |
+| `capabilities.tools`  | Yes      | Array of tool definitions                        |
+| `name`                | No       | Display name (defaults to plugin_id suffix)      |
+| `license`             | No       | License identifier (defaults to `MIT`)           |
+| `authors`             | No       | Array of author names (defaults to repo owner)   |
+| `min_macos`           | No       | Minimum macOS version (defaults to `13.0`)       |
+| `min_osaurus`         | No       | Minimum Osaurus version (defaults to `0.5.0`)    |
+
+### 2. Add Release Workflow
+
+Create `.github/workflows/release.yml` in your plugin repository:
+
+```yaml
+# .github/workflows/release.yml
+name: Release
+on:
+  push:
+    tags: ['v*', '[0-9]+.[0-9]+.[0-9]+']
+
+jobs:
+  release:
+    uses: dinoki-ai/osaurus-tools/.github/workflows/build-plugin.yml@master
+    secrets: inherit
+```
+
+That's it. No inputs needed - everything is extracted from your dylib's `get_manifest()`.
+
+### 3. Configure Secrets
+
+All secrets are required for code signing and artifact verification.
+
+| Secret                      | Purpose                                        |
+| --------------------------- | ---------------------------------------------- |
+| `APPLE_CERTIFICATE_BASE64`  | Base64-encoded Developer ID certificate (.p12) |
+| `APPLE_CERTIFICATE_PASSWORD`| Password for the Apple certificate             |
+| `MINISIGN_SECRET_KEY`       | Sign release artifacts for integrity           |
+| `MINISIGN_PUBLIC_KEY`       | Public key included in registry manifest       |
+| `REGISTRY_PAT`              | GitHub PAT with `public_repo` scope for auto-PR|
+
+Generate minisign keys:
+
+```bash
+minisign -G -p minisign.pub -s minisign.key
+# Add minisign.key contents to MINISIGN_SECRET_KEY
+# Add minisign.pub contents to MINISIGN_PUBLIC_KEY
+```
+
+### 4. Tag and Release
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow will:
+
+1. Build your plugin as a dylib
+2. Auto-detect the dylib and extract manifest
+3. Code sign with Apple Developer ID
+4. Sign the artifact with minisign
+5. Create a GitHub Release with the artifact
+6. Submit a PR to the osaurus-tools registry
+
 ## Development
 
 ### Building System Tools
