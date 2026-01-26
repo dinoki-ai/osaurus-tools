@@ -1,0 +1,325 @@
+name: Build Plugin (Reusable)
+
+# Reusable workflow for building, signing, and releasing Osaurus plugins.
+# Zero inputs required - everything is extracted from get_manifest().
+#
+# External plugin repositories call this workflow to:
+# 1. Build their Swift plugin as a dylib
+# 2. Auto-detect the dylib and extract manifest (plugin_id, name, etc.)
+# 3. Package and sign the artifact
+# 4. Create a GitHub Release
+# 5. Submit a PR to the osaurus-tools registry
+
+on:
+  workflow_call:
+    inputs:
+      swift_version:
+        description: 'Swift version'
+        required: false
+        type: string
+        default: '5.9'
+      macos_version:
+        description: 'macOS runner'
+        required: false
+        type: string
+        default: 'macos-14'
+    secrets:
+      APPLE_CERTIFICATE_BASE64:
+        required: true
+      APPLE_CERTIFICATE_PASSWORD:
+        required: true
+      MINISIGN_SECRET_KEY:
+        required: true
+      MINISIGN_PUBLIC_KEY:
+        required: true
+      REGISTRY_PAT:
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ inputs.macos_version }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      plugin_id: ${{ steps.extract.outputs.plugin_id }}
+      manifest: ${{ steps.extract.outputs.manifest }}
+      artifact_url: ${{ steps.urls.outputs.artifact_url }}
+      artifact_name: ${{ steps.package.outputs.artifact }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+      signature: ${{ steps.sign.outputs.signature }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Set up Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: ${{ inputs.swift_version }}
+
+      - name: Build release
+        run: swift build -c release
+
+      - name: Find dylib
+        id: find
+        run: |
+          # Auto-detect the dylib (one plugin = one dylib)
+          DYLIB=$(find .build/release -maxdepth 1 -name "*.dylib" -type f | head -1)
+
+          if [ -z "$DYLIB" ]; then
+            echo "::error::No dylib found in .build/release/"
+            ls -la .build/release/
+            exit 1
+          fi
+
+          echo "dylib=$DYLIB" >> $GITHUB_OUTPUT
+          echo "Found: $DYLIB"
+
+      - name: Install Osaurus CLI
+        run: |
+          curl -fsSL https://github.com/dinoki-ai/osaurus/releases/latest/download/osaurus-macos-arm64.tar.gz | tar xz
+          sudo mv osaurus /usr/local/bin/
+
+      - name: Extract manifest from dylib
+        id: extract
+        run: |
+          MANIFEST=$(osaurus manifest extract "${{ steps.find.outputs.dylib }}")
+
+          # Validate JSON
+          echo "$MANIFEST" | jq . > /dev/null || {
+            echo "::error::Invalid JSON from manifest extraction"
+            exit 1
+          }
+
+          # Extract plugin_id for use in later steps
+          PLUGIN_ID=$(echo "$MANIFEST" | jq -r '.plugin_id')
+          if [ -z "$PLUGIN_ID" ] || [ "$PLUGIN_ID" = "null" ]; then
+            echo "::error::No plugin_id in manifest"
+            exit 1
+          fi
+
+          echo "plugin_id=$PLUGIN_ID" >> $GITHUB_OUTPUT
+
+          # Store full manifest
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "manifest<<$EOF" >> $GITHUB_OUTPUT
+          echo "$MANIFEST" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+          echo "Extracted plugin_id: $PLUGIN_ID"
+          echo "Full manifest:"
+          echo "$MANIFEST" | jq .
+
+      - name: Code sign
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+
+          codesign --force --options runtime --timestamp --sign "$IDENTITY" "${{ steps.find.outputs.dylib }}"
+          codesign --verify --verbose "${{ steps.find.outputs.dylib }}"
+
+          rm -f $RUNNER_TEMP/cert.p12
+
+      - name: Package
+        id: package
+        run: |
+          PLUGIN_ID="${{ steps.extract.outputs.plugin_id }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          ARTIFACT="${PLUGIN_ID}-${VERSION}-macos-arm64.zip"
+
+          zip -j "$ARTIFACT" "${{ steps.find.outputs.dylib }}"
+
+          SHA256=$(shasum -a 256 "$ARTIFACT" | cut -d ' ' -f 1)
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
+
+      - name: Sign with minisign
+        id: sign
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+        run: |
+          brew install minisign
+          echo "$MINISIGN_SECRET_KEY" > $RUNNER_TEMP/minisign.key
+
+          minisign -Sm "${{ steps.package.outputs.artifact }}" -s $RUNNER_TEMP/minisign.key
+
+          SIGNATURE=$(cat "${{ steps.package.outputs.artifact }}.minisig")
+
+          # Store signature using heredoc for multiline
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "signature<<$EOF" >> $GITHUB_OUTPUT
+          echo "$SIGNATURE" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+          rm -f $RUNNER_TEMP/minisign.key
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.package.outputs.artifact }}
+            ${{ steps.package.outputs.artifact }}.minisig
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+
+      - name: Set artifact URL
+        id: urls
+        run: |
+          ARTIFACT_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.package.outputs.artifact }}"
+          echo "artifact_url=$ARTIFACT_URL" >> $GITHUB_OUTPUT
+
+  registry-pr:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate registry manifest
+        run: |
+          MANIFEST='${{ needs.build.outputs.manifest }}'
+          PLUGIN_ID="${{ needs.build.outputs.plugin_id }}"
+
+          # Extract fields with defaults
+          NAME=$(echo "$MANIFEST" | jq -r '.name // empty')
+          DESCRIPTION=$(echo "$MANIFEST" | jq -r '.description // ""')
+          LICENSE=$(echo "$MANIFEST" | jq -r '.license // "MIT"')
+          AUTHORS=$(echo "$MANIFEST" | jq -c '.authors // ["${{ github.repository_owner }}"]')
+          MIN_MACOS=$(echo "$MANIFEST" | jq -r '.min_macos // "13.0"')
+          MIN_OSAURUS=$(echo "$MANIFEST" | jq -r '.min_osaurus // "0.5.0"')
+          TOOLS=$(echo "$MANIFEST" | jq -c '.capabilities.tools // []')
+
+          # Default name from plugin_id suffix if not set
+          if [ -z "$NAME" ]; then
+            NAME=$(echo "$PLUGIN_ID" | rev | cut -d. -f1 | rev)
+            NAME="$(tr '[:lower:]' '[:upper:]' <<< ${NAME:0:1})${NAME:1}"
+          fi
+
+          # Build registry JSON
+          cat > registry-manifest.json << EOF
+          {
+            "plugin_id": "$PLUGIN_ID",
+            "name": "$NAME",
+            "description": "$DESCRIPTION",
+            "homepage": "${{ github.server_url }}/${{ github.repository }}",
+            "license": "$LICENSE",
+            "authors": $AUTHORS,
+            "capabilities": {
+              "tools": $TOOLS
+            },
+            "public_keys": {
+              "minisign": "${{ secrets.MINISIGN_PUBLIC_KEY }}"
+            },
+            "requires": {
+              "min_macos": "$MIN_MACOS",
+              "osaurus_min_version": "$MIN_OSAURUS"
+            },
+            "versions": [
+              {
+                "version": "${{ needs.build.outputs.version }}",
+                "release_date": "$(date -u +%Y-%m-%d)",
+                "artifacts": [
+                  {
+                    "os": "macos",
+                    "arch": "arm64",
+                    "url": "${{ needs.build.outputs.artifact_url }}",
+                    "sha256": "${{ needs.build.outputs.sha256 }}",
+                    "min_macos": "$MIN_MACOS",
+                    "minisign": {
+                      "signature": "${{ needs.build.outputs.signature }}",
+                      "key_id": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+
+          echo "Generated registry manifest:"
+          cat registry-manifest.json | jq .
+
+      - name: Upload manifest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: registry-manifest
+          path: registry-manifest.json
+
+      - name: Create PR via fork
+        env:
+          GH_TOKEN: ${{ secrets.REGISTRY_PAT }}
+        run: |
+          PLUGIN_ID="${{ needs.build.outputs.plugin_id }}"
+          VERSION="${{ needs.build.outputs.version }}"
+          OWNER="${{ github.repository_owner }}"
+          BRANCH="plugin/${PLUGIN_ID}-${VERSION}"
+
+          # Fork if needed
+          gh repo fork dinoki-ai/osaurus-tools --clone=false || true
+          sleep 3
+
+          # Clone fork
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/osaurus-tools.git" /tmp/registry
+          cd /tmp/registry
+
+          # Sync with upstream
+          git remote add upstream https://github.com/dinoki-ai/osaurus-tools.git
+          git fetch upstream
+          git checkout -B master upstream/master
+          git push origin master --force
+
+          # Create branch
+          git checkout -b "$BRANCH"
+
+          # Add/update manifest
+          MANIFEST_PATH="plugins/${PLUGIN_ID}.json"
+          mkdir -p plugins
+
+          if [ -f "$MANIFEST_PATH" ]; then
+            jq --slurpfile new "$GITHUB_WORKSPACE/registry-manifest.json" \
+              '.versions = [$new[0].versions[0]] + .versions | .versions |= unique_by(.version)' \
+              "$MANIFEST_PATH" > tmp.json && mv tmp.json "$MANIFEST_PATH"
+          else
+            cp "$GITHUB_WORKSPACE/registry-manifest.json" "$MANIFEST_PATH"
+          fi
+
+          # Commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$MANIFEST_PATH"
+          git commit -m "Add ${PLUGIN_ID} v${VERSION}"
+          git push origin "$BRANCH"
+
+          # Create PR
+          gh pr create \
+            --repo dinoki-ai/osaurus-tools \
+            --head "${OWNER}:${BRANCH}" \
+            --title "Add ${PLUGIN_ID} v${VERSION}" \
+            --body "**Plugin:** \`${PLUGIN_ID}\`
+          **Version:** \`${VERSION}\`
+          **Source:** [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
+
+          ---
+          *Auto-generated from plugin manifest*"
