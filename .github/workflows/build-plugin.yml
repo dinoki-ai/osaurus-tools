@@ -76,9 +76,9 @@ jobs:
         id: find
         run: |
           # Auto-detect the dylib (one plugin = one dylib)
-          DYLIB=$(find .build/release -maxdepth 1 -name "*.dylib" -type f | head -1)
+          DYLIB=$(ls .build/release/*.dylib 2>/dev/null | head -1)
 
-          if [ -z "$DYLIB" ]; then
+          if [ -z "$DYLIB" ] || [ ! -f "$DYLIB" ]; then
             echo "::error::No dylib found in .build/release/"
             ls -la .build/release/
             exit 1
