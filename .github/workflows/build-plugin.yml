@@ -89,6 +89,7 @@ jobs:
 
       - name: Install Osaurus CLI
         run: |
+          brew update
           brew install --cask osaurus
 
       - name: Extract manifest from dylib
