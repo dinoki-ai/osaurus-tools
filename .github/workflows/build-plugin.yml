@@ -107,10 +107,11 @@ jobs:
           echo "plugin_id=$PLUGIN_ID" >> $GITHUB_OUTPUT
           echo "plugin_id_b64=$(echo -n "$PLUGIN_ID" | base64)" >> $GITHUB_OUTPUT
 
-          # Use heredoc for manifest_b64 to handle newlines from base64 wrapping
+          # Use heredoc for base64 output, ensuring no newlines in the base64 content
           {
             echo "manifest_b64<<EOF"
-            echo "$MANIFEST" | jq -c . | base64
+            echo "$MANIFEST" | jq -c . | base64 | tr -d '\n'
+            echo ""
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
@@ -155,7 +156,8 @@ jobs:
           # Use heredoc for base64 output
           {
             echo "artifact_b64<<EOF"
-            echo -n "$ARTIFACT" | base64
+            echo -n "$ARTIFACT" | base64 | tr -d '\n'
+            echo ""
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
@@ -191,7 +193,8 @@ jobs:
           # Use heredoc for base64 output
           {
             echo "artifact_url_b64<<EOF"
-            echo -n "$ARTIFACT_URL" | base64
+            echo -n "$ARTIFACT_URL" | base64 | tr -d '\n'
+            echo ""
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
@@ -207,10 +210,12 @@ jobs:
           ARTIFACT_URL_B64: ${{ needs.build.outputs.artifact_url_b64 }}
           SIGNATURE_B64: ${{ needs.build.outputs.signature_b64 }}
         run: |
-          PLUGIN_ID=$(echo "$PLUGIN_ID_B64" | base64 -d)
+          # Decode base64 encoded values
+          # Use tr -d '\n' to remove any potential newlines from decoding
+          PLUGIN_ID=$(echo "$PLUGIN_ID_B64" | base64 -d | tr -d '\n')
           MANIFEST=$(echo "$MANIFEST_B64" | base64 -d)
-          ARTIFACT_URL=$(echo "$ARTIFACT_URL_B64" | base64 -d)
-          SIGNATURE=$(echo "$SIGNATURE_B64" | base64 -d)
+          ARTIFACT_URL=$(echo "$ARTIFACT_URL_B64" | base64 -d | tr -d '\n')
+          SIGNATURE=$(echo "$SIGNATURE_B64" | base64 -d | tr -d '\n')
 
           NAME=$(echo "$MANIFEST" | jq -r '.name // empty')
           DESCRIPTION=$(echo "$MANIFEST" | jq -r '.description // ""')
