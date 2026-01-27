@@ -4,7 +4,9 @@
   "description": "Interact with macOS Contacts.app - get phone numbers, find contacts by name or phone",
   "homepage": "https://github.com/dinoki-ai/osaurus-contacts",
   "license": "MIT",
-  "authors": ["dinoki-ai"],
+  "authors": [
+    "dinoki-ai"
+  ],
   "capabilities": {
     "tools": [
       {
@@ -38,6 +40,22 @@
           "size": 45960,
           "minisign": {
             "signature": "untrusted comment: signature from minisign secret key\nRWTUthDg50o59uHLzOkYOHLWQm//AFcc2YR6LS3GD+FC1LSzFZfaeTADybt85XZARUefn2E5vPSB0yzswxRHZS1xXtgKi+fpWgM=\ntrusted comment: timestamp:1766326184\tfile:osaurus.contacts-1.0.1.zip\nS8QuwgkY88Um9a9SQKKJ3dEW9SXtDzA5/UohlL/x45Ps7EJvHHJSuIjgUDAQBTMjbe0f1Gg8MeKOEM36VpNwAA=="
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.0.2",
+      "release_date": "2026-01-27",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-contacts/releases/download/1.0.2/osaurus.contacts-1.0.2-macos-arm64.zip",
+          "sha256": "b5310b8803a898f7c1120d29e952762fbfdd359266d914e5182c39215a0b6df2",
+          "min_macos": "13.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTUthDg50o59nEKiFcx4yvPXBHLvjnbGYWBDbYycuCNDawCaraHnVaDTunx1KZjFuBb5PCqluNw+rOHiUnQ/mfwNmJFJME9lQM=\ntrusted comment: timestamp:1769506166\tfile:osaurus.contacts-1.0.2-macos-arm64.zip\nRMIGR4PCKbsYk+OGIoUCBEf3oUMNQwbrqKVMOrvLmGS4+BmPnmaqwleIN5Mfy+gR9qCPP4li5cM3fnUZm4zgBQ=="
           }
         }
       ]
