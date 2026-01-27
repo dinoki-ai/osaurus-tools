@@ -63,6 +63,22 @@
           }
         }
       ]
+    },
+    {
+      "version": "1.0.2",
+      "release_date": "2026-01-27",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-maps/releases/download/1.0.2/osaurus.maps-1.0.2-macos-arm64.zip",
+          "sha256": "11d845bf36b33a93f507486ac05d3f1c9e0d3534e0b892781f59ef8c231df794",
+          "min_macos": "13.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWQ7C4tF5waprcITlE4+WTbwnbyqfOhlBxDPBov+BddiZoCYbFehlXjPAJzXQHEWmnwrovx4vveqDjuI5yuctQ0jhhItR9BKgQY=\ntrusted comment: timestamp:1769504366\tfile:osaurus.maps-1.0.2-macos-arm64.zip\naRgqyaTrFVlkkGO9Hlg89YqFE6aGmyWEkEuepeeQYC4fRIEKF4CPGiaJND1pnnHn06UHMjjkwaHgIqFnpuLLCA=="
+          }
+        }
+      ]
     }
   ]
 }
