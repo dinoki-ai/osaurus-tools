@@ -166,7 +166,9 @@ jobs:
           brew install minisign
           echo "$MINISIGN_SECRET_KEY" > $RUNNER_TEMP/minisign.key
 
-          echo "$MINISIGN_PASSWORD" | minisign -Sm "${{ steps.package.outputs.artifact }}" -s $RUNNER_TEMP/minisign.key
+          # Sign using legacy format (-l) for compatibility with Osaurus
+          # Modern minisign uses "ED" algorithm ID, but Osaurus expects "Ed" (legacy format)
+          echo "$MINISIGN_PASSWORD" | minisign -Slm "${{ steps.package.outputs.artifact }}" -s $RUNNER_TEMP/minisign.key
 
           # Base64 encode signature for safe transport between jobs
           SIGNATURE_B64=$(base64 -i "${{ steps.package.outputs.artifact }}.minisig")
