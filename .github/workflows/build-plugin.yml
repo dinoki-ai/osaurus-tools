@@ -17,12 +17,12 @@ on:
         description: 'Swift version'
         required: false
         type: string
-        default: '5.9'
+        default: '6.0'
       macos_version:
         description: 'macOS runner'
         required: false
         type: string
-        default: 'macos-14'
+        default: 'macos-15'
     secrets:
       DEVELOPER_ID_CERTIFICATE_P12_BASE64:
         required: true
