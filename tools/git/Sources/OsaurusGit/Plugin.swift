@@ -338,8 +338,12 @@ private var api: osr_plugin_api = {
         let manifest = """
             {
               "plugin_id": "osaurus.git",
-              "version": "1.0.0",
+              "name": "Git",
               "description": "Read-only git operations: status, log, diff, and branch info",
+              "license": "MIT",
+              "authors": ["Dinoki Labs"],
+              "min_macos": "13.0",
+              "min_osaurus": "0.5.0",
               "capabilities": {
                 "tools": [
                   {

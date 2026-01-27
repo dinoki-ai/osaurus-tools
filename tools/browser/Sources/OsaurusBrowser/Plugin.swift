@@ -10,11 +10,11 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
     private var navigationSemaphore = DispatchSemaphore(value: 0)
     private var navigationError: Error?
     private var isLoaded = false
-    
+
     // Track pending network requests for networkidle detection
     private var pendingRequests = 0
     private var networkIdleSemaphore: DispatchSemaphore?
-    
+
     // Element ref counter - increments with each snapshot
     private var refCounter = 0
 
@@ -34,9 +34,10 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
     private func setupWebView() {
         let config = WKWebViewConfiguration()
         config.preferences.javaScriptCanOpenWindowsAutomatically = false
-        
+
         // Set up user agent to appear as a real browser
-        config.applicationNameForUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+        config.applicationNameForUserAgent =
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 
         // Create a headless webview (no window needed)
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 1280, height: 800), configuration: config)
@@ -56,7 +57,9 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
         case domstable = "domstable"
     }
 
-    func navigate(to urlString: String, timeout: TimeInterval = 30, waitUntil: WaitUntil = .load) -> (success: Bool, error: String?) {
+    func navigate(
+        to urlString: String, timeout: TimeInterval = 30, waitUntil: WaitUntil = .load
+    ) -> (success: Bool, error: String?) {
         guard let url = URL(string: urlString) else {
             return (false, "Invalid URL: \(urlString)")
         }
@@ -99,21 +102,21 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
     private func waitForNetworkIdle(timeout: TimeInterval) {
         // Simple implementation: wait a bit for dynamic content
         Thread.sleep(forTimeInterval: 0.5)
-        
+
         // Check if there are pending XHR/fetch requests
         let script = """
-        (function() {
-            return window.performance.getEntriesByType('resource')
-                .filter(r => r.initiatorType === 'fetch' || r.initiatorType === 'xmlhttprequest')
-                .filter(r => r.responseEnd === 0).length;
-        })()
-        """
-        
+            (function() {
+                return window.performance.getEntriesByType('resource')
+                    .filter(r => r.initiatorType === 'fetch' || r.initiatorType === 'xmlhttprequest')
+                    .filter(r => r.responseEnd === 0).length;
+            })()
+            """
+
         let startTime = Date()
         while Date().timeIntervalSince(startTime) < timeout {
             let result = evaluateJavaScript(script)
             if let pending = result.result as? Int, pending == 0 {
-                Thread.sleep(forTimeInterval: 0.3) // Extra buffer
+                Thread.sleep(forTimeInterval: 0.3)  // Extra buffer
                 return
             }
             Thread.sleep(forTimeInterval: 0.1)
@@ -123,23 +126,23 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
     private func waitForDOMStable(timeout: TimeInterval) {
         // Use MutationObserver to detect DOM changes
         let script = """
-        new Promise((resolve) => {
-            let timeout;
-            const observer = new MutationObserver(() => {
-                clearTimeout(timeout);
+            new Promise((resolve) => {
+                let timeout;
+                const observer = new MutationObserver(() => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        observer.disconnect();
+                        resolve(true);
+                    }, 300);
+                });
+                observer.observe(document.body, { childList: true, subtree: true, attributes: true });
                 timeout = setTimeout(() => {
                     observer.disconnect();
                     resolve(true);
                 }, 300);
             });
-            observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-            timeout = setTimeout(() => {
-                observer.disconnect();
-                resolve(true);
-            }, 300);
-        });
-        """
-        
+            """
+
         _ = evaluateJavaScript(script, timeout: timeout)
     }
 
@@ -180,7 +183,7 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
     func takeSnapshot(options: SnapshotOptions = SnapshotOptions()) -> String {
         // Reset ref counter for each snapshot
         refCounter = 0
-        
+
         let filterCondition: String
         switch options.filter {
         case "inputs":
@@ -195,188 +198,190 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
             filterCondition = "true"
         }
 
-        let visibilityCheck = options.visibleOnly ? """
-            const rect = el.getBoundingClientRect();
-            const style = window.getComputedStyle(el);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
-            if (rect.width === 0 && rect.height === 0) return false;
-            return true;
-        """ : "return true;"
+        let visibilityCheck =
+            options.visibleOnly
+            ? """
+                const rect = el.getBoundingClientRect();
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+                if (rect.width === 0 && rect.height === 0) return false;
+                return true;
+            """ : "return true;"
 
         let script = """
-        (function() {
-            const maxElements = \(options.maxElements);
-            const results = [];
-            let refId = 0;
-            
-            // Store refs in a global map for later retrieval
-            if (!window.__osaurus_refs) {
-                window.__osaurus_refs = new Map();
-            }
-            window.__osaurus_refs.clear();
-            
-            function isVisible(el) {
-                \(visibilityCheck)
-            }
-            
-            function isInteractive(el) {
-                const tag = el.tagName.toLowerCase();
-                const role = el.getAttribute('role');
-                const tabIndex = el.getAttribute('tabindex');
+            (function() {
+                const maxElements = \(options.maxElements);
+                const results = [];
+                let refId = 0;
                 
-                // Standard interactive elements
-                if (['a', 'button', 'input', 'textarea', 'select', 'details', 'summary'].includes(tag)) return true;
-                
-                // ARIA roles
-                if (['button', 'link', 'menuitem', 'option', 'radio', 'checkbox', 'tab', 'textbox', 'combobox', 'listbox', 'menu', 'menubar', 'slider', 'spinbutton', 'switch'].includes(role)) return true;
-                
-                // Clickable elements
-                if (el.onclick || el.getAttribute('onclick')) return true;
-                if (tabIndex && tabIndex !== '-1') return true;
-                
-                // Contenteditable
-                if (el.getAttribute('contenteditable') === 'true') return true;
-                
-                return false;
-            }
-            
-            function getElementType(el) {
-                const tag = el.tagName.toLowerCase();
-                const type = el.getAttribute('type');
-                const role = el.getAttribute('role');
-                
-                if (tag === 'a') return 'link';
-                if (tag === 'button' || role === 'button') return 'button';
-                if (tag === 'input') {
-                    if (type === 'checkbox') return 'checkbox';
-                    if (type === 'radio') return 'radio';
-                    if (type === 'submit') return 'submit';
-                    if (type === 'file') return 'file';
-                    return 'input';
+                // Store refs in a global map for later retrieval
+                if (!window.__osaurus_refs) {
+                    window.__osaurus_refs = new Map();
                 }
-                if (tag === 'textarea') return 'textarea';
-                if (tag === 'select') return 'select';
-                if (tag === 'img') return 'img';
-                if (role) return role;
-                return tag;
-            }
-            
-            function truncate(str, len) {
-                if (!str) return '';
-                str = str.trim().replace(/\\s+/g, ' ');
-                return str.length > len ? str.substring(0, len) + '...' : str;
-            }
-            
-            function getElementText(el) {
-                const tag = el.tagName.toLowerCase();
+                window.__osaurus_refs.clear();
                 
-                // For inputs, use placeholder or aria-label
-                if (tag === 'input' || tag === 'textarea') {
-                    return el.placeholder || el.getAttribute('aria-label') || el.name || '';
+                function isVisible(el) {
+                    \(visibilityCheck)
                 }
                 
-                // For images, use alt text
-                if (tag === 'img') {
-                    return el.alt || el.title || '';
+                function isInteractive(el) {
+                    const tag = el.tagName.toLowerCase();
+                    const role = el.getAttribute('role');
+                    const tabIndex = el.getAttribute('tabindex');
+                    
+                    // Standard interactive elements
+                    if (['a', 'button', 'input', 'textarea', 'select', 'details', 'summary'].includes(tag)) return true;
+                    
+                    // ARIA roles
+                    if (['button', 'link', 'menuitem', 'option', 'radio', 'checkbox', 'tab', 'textbox', 'combobox', 'listbox', 'menu', 'menubar', 'slider', 'spinbutton', 'switch'].includes(role)) return true;
+                    
+                    // Clickable elements
+                    if (el.onclick || el.getAttribute('onclick')) return true;
+                    if (tabIndex && tabIndex !== '-1') return true;
+                    
+                    // Contenteditable
+                    if (el.getAttribute('contenteditable') === 'true') return true;
+                    
+                    return false;
                 }
                 
-                // For other elements, get visible text
-                const text = el.innerText || el.textContent || '';
-                return text;
-            }
-            
-            function getElementInfo(el) {
-                const ref = 'E' + (++refId);
-                window.__osaurus_refs.set(ref, el);
-                
-                const type = getElementType(el);
-                const text = truncate(getElementText(el), 50);
-                
-                let info = { ref, type, text };
-                
-                // Add relevant attributes
-                if (el.name) info.name = el.name;
-                if (el.id) info.id = truncate(el.id, 30);
-                if (el.value && el.tagName.toLowerCase() !== 'textarea') info.value = truncate(el.value, 30);
-                if (el.placeholder) info.placeholder = truncate(el.placeholder, 30);
-                if (el.href) info.href = truncate(el.href, 50);
-                if (el.checked) info.checked = true;
-                if (el.disabled) info.disabled = true;
-                if (el.required) info.required = true;
-                if (el.getAttribute('aria-label')) info.ariaLabel = truncate(el.getAttribute('aria-label'), 30);
-                
-                return info;
-            }
-            
-            // Walk the DOM
-            const walker = document.createTreeWalker(
-                document.body,
-                NodeFilter.SHOW_ELEMENT,
-                {
-                    acceptNode: function(node) {
-                        if (!isInteractive(node)) return NodeFilter.FILTER_SKIP;
-                        if (!isVisible(node)) return NodeFilter.FILTER_SKIP;
-                        if (!(\(filterCondition))) return NodeFilter.FILTER_SKIP;
-                        return NodeFilter.FILTER_ACCEPT;
+                function getElementType(el) {
+                    const tag = el.tagName.toLowerCase();
+                    const type = el.getAttribute('type');
+                    const role = el.getAttribute('role');
+                    
+                    if (tag === 'a') return 'link';
+                    if (tag === 'button' || role === 'button') return 'button';
+                    if (tag === 'input') {
+                        if (type === 'checkbox') return 'checkbox';
+                        if (type === 'radio') return 'radio';
+                        if (type === 'submit') return 'submit';
+                        if (type === 'file') return 'file';
+                        return 'input';
                     }
+                    if (tag === 'textarea') return 'textarea';
+                    if (tag === 'select') return 'select';
+                    if (tag === 'img') return 'img';
+                    if (role) return role;
+                    return tag;
                 }
-            );
-            
-            let el;
-            while ((el = walker.nextNode()) && results.length < maxElements) {
-                results.push(getElementInfo(el));
-            }
-            
-            return {
-                url: window.location.href,
-                title: document.title,
-                elementCount: results.length,
-                hasMore: walker.nextNode() !== null,
-                elements: results
-            };
-        })()
-        """
+                
+                function truncate(str, len) {
+                    if (!str) return '';
+                    str = str.trim().replace(/\\s+/g, ' ');
+                    return str.length > len ? str.substring(0, len) + '...' : str;
+                }
+                
+                function getElementText(el) {
+                    const tag = el.tagName.toLowerCase();
+                    
+                    // For inputs, use placeholder or aria-label
+                    if (tag === 'input' || tag === 'textarea') {
+                        return el.placeholder || el.getAttribute('aria-label') || el.name || '';
+                    }
+                    
+                    // For images, use alt text
+                    if (tag === 'img') {
+                        return el.alt || el.title || '';
+                    }
+                    
+                    // For other elements, get visible text
+                    const text = el.innerText || el.textContent || '';
+                    return text;
+                }
+                
+                function getElementInfo(el) {
+                    const ref = 'E' + (++refId);
+                    window.__osaurus_refs.set(ref, el);
+                    
+                    const type = getElementType(el);
+                    const text = truncate(getElementText(el), 50);
+                    
+                    let info = { ref, type, text };
+                    
+                    // Add relevant attributes
+                    if (el.name) info.name = el.name;
+                    if (el.id) info.id = truncate(el.id, 30);
+                    if (el.value && el.tagName.toLowerCase() !== 'textarea') info.value = truncate(el.value, 30);
+                    if (el.placeholder) info.placeholder = truncate(el.placeholder, 30);
+                    if (el.href) info.href = truncate(el.href, 50);
+                    if (el.checked) info.checked = true;
+                    if (el.disabled) info.disabled = true;
+                    if (el.required) info.required = true;
+                    if (el.getAttribute('aria-label')) info.ariaLabel = truncate(el.getAttribute('aria-label'), 30);
+                    
+                    return info;
+                }
+                
+                // Walk the DOM
+                const walker = document.createTreeWalker(
+                    document.body,
+                    NodeFilter.SHOW_ELEMENT,
+                    {
+                        acceptNode: function(node) {
+                            if (!isInteractive(node)) return NodeFilter.FILTER_SKIP;
+                            if (!isVisible(node)) return NodeFilter.FILTER_SKIP;
+                            if (!(\(filterCondition))) return NodeFilter.FILTER_SKIP;
+                            return NodeFilter.FILTER_ACCEPT;
+                        }
+                    }
+                );
+                
+                let el;
+                while ((el = walker.nextNode()) && results.length < maxElements) {
+                    results.push(getElementInfo(el));
+                }
+                
+                return {
+                    url: window.location.href,
+                    title: document.title,
+                    elementCount: results.length,
+                    hasMore: walker.nextNode() !== null,
+                    elements: results
+                };
+            })()
+            """
 
         let result = evaluateJavaScript(script, timeout: 15)
-        
+
         if let error = result.error {
             return "Error: \(error)"
         }
-        
+
         guard let data = result.result as? [String: Any] else {
             return "Error: Failed to parse snapshot"
         }
-        
+
         return formatSnapshot(data)
     }
 
     private func formatSnapshot(_ data: [String: Any]) -> String {
         var output = ""
-        
+
         // Header
         let title = data["title"] as? String ?? ""
         let url = data["url"] as? String ?? ""
         let hasMore = data["hasMore"] as? Bool ?? false
-        
+
         output += "- page: \(title)\n"
         output += "- url: \(url)\n\n"
-        
+
         // Elements
         guard let elements = data["elements"] as? [[String: Any]] else {
             return output + "(no interactive elements found)"
         }
-        
+
         for element in elements {
             let ref = element["ref"] as? String ?? ""
             let type = element["type"] as? String ?? ""
             let text = element["text"] as? String ?? ""
-            
+
             var line = "[\(ref)] \(type)"
-            
+
             if !text.isEmpty {
                 line += " \"\(text)\""
             }
-            
+
             // Add key attributes inline
             var attrs: [String] = []
             if let name = element["name"] as? String, !name.isEmpty {
@@ -400,18 +405,18 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
             if element["required"] as? Bool == true {
                 attrs.append("required")
             }
-            
+
             if !attrs.isEmpty {
                 line += " " + attrs.joined(separator: " ")
             }
-            
+
             output += line + "\n"
         }
-        
+
         if hasMore {
             output += "\n... (more elements available, use filter or increase max_elements)"
         }
-        
+
         return output
     }
 
@@ -419,36 +424,36 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
 
     func clickElement(ref: String?, selector: String?) -> (success: Bool, error: String?) {
         let script: String
-        
+
         if let ref = ref {
             script = """
-            (function() {
-                const el = window.__osaurus_refs?.get('\(ref)');
-                if (!el) return {success: false, error: 'Element ref not found. Call browser_snapshot first.'};
-                if (!document.body.contains(el)) return {success: false, error: 'Element no longer in DOM. Call browser_snapshot to refresh.'};
-                el.click();
-                return {success: true};
-            })()
-            """
+                (function() {
+                    const el = window.__osaurus_refs?.get('\(ref)');
+                    if (!el) return {success: false, error: 'Element ref not found. Call browser_snapshot first.'};
+                    if (!document.body.contains(el)) return {success: false, error: 'Element no longer in DOM. Call browser_snapshot to refresh.'};
+                    el.click();
+                    return {success: true};
+                })()
+                """
         } else if let selector = selector {
             script = """
-            (function() {
-                const el = document.querySelector('\(escapeSelector(selector))');
-                if (!el) return {success: false, error: 'Element not found: \(escapeSelector(selector))'};
-                el.click();
-                return {success: true};
-            })()
-            """
+                (function() {
+                    const el = document.querySelector('\(escapeSelector(selector))');
+                    if (!el) return {success: false, error: 'Element not found: \(escapeSelector(selector))'};
+                    el.click();
+                    return {success: true};
+                })()
+                """
         } else {
             return (false, "Either ref or selector must be provided")
         }
-        
+
         let result = evaluateJavaScript(script)
-        
+
         if let error = result.error {
             return (false, error)
         }
-        
+
         if let dict = result.result as? [String: Any] {
             if let success = dict["success"] as? Bool, success {
                 return (true, nil)
@@ -457,15 +462,17 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
                 return (false, error)
             }
         }
-        
+
         return (false, "Unknown error")
     }
 
-    func typeText(ref: String?, selector: String?, text: String, clear: Bool = true, submit: Bool = false) -> (success: Bool, error: String?) {
+    func typeText(
+        ref: String?, selector: String?, text: String, clear: Bool = true, submit: Bool = false
+    ) -> (success: Bool, error: String?) {
         let escapedText = text.replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "'", with: "\\'")
             .replacingOccurrences(of: "\n", with: "\\n")
-        
+
         let getElementScript: String
         if let ref = ref {
             getElementScript = "window.__osaurus_refs?.get('\(ref)')"
@@ -474,38 +481,38 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
         } else {
             return (false, "Either ref or selector must be provided")
         }
-        
+
         let script = """
-        (function() {
-            const el = \(getElementScript);
-            if (!el) return {success: false, error: 'Element not found'};
-            if (!document.body.contains(el)) return {success: false, error: 'Element no longer in DOM'};
-            
-            el.focus();
-            if (\(clear)) el.value = '';
-            el.value += '\(escapedText)';
-            el.dispatchEvent(new Event('input', {bubbles: true}));
-            el.dispatchEvent(new Event('change', {bubbles: true}));
-            
-            if (\(submit)) {
-                const form = el.closest('form');
-                if (form) {
-                    form.submit();
-                } else {
-                    el.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', code: 'Enter', bubbles: true}));
+            (function() {
+                const el = \(getElementScript);
+                if (!el) return {success: false, error: 'Element not found'};
+                if (!document.body.contains(el)) return {success: false, error: 'Element no longer in DOM'};
+                
+                el.focus();
+                if (\(clear)) el.value = '';
+                el.value += '\(escapedText)';
+                el.dispatchEvent(new Event('input', {bubbles: true}));
+                el.dispatchEvent(new Event('change', {bubbles: true}));
+                
+                if (\(submit)) {
+                    const form = el.closest('form');
+                    if (form) {
+                        form.submit();
+                    } else {
+                        el.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', code: 'Enter', bubbles: true}));
+                    }
                 }
-            }
-            
-            return {success: true};
-        })()
-        """
-        
+                
+                return {success: true};
+            })()
+            """
+
         let result = evaluateJavaScript(script)
-        
+
         if let error = result.error {
             return (false, error)
         }
-        
+
         if let dict = result.result as? [String: Any] {
             if let success = dict["success"] as? Bool, success {
                 return (true, nil)
@@ -514,13 +521,13 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
                 return (false, error)
             }
         }
-        
+
         return (false, "Unknown error")
     }
 
     func selectOption(ref: String?, selector: String?, values: [String]) -> (success: Bool, error: String?) {
         let valuesJSON = values.map { "\"\($0.replacingOccurrences(of: "\"", with: "\\\""))\"" }.joined(separator: ",")
-        
+
         let getElementScript: String
         if let ref = ref {
             getElementScript = "window.__osaurus_refs?.get('\(ref)')"
@@ -529,28 +536,28 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
         } else {
             return (false, "Either ref or selector must be provided")
         }
-        
+
         let script = """
-        (function() {
-            const el = \(getElementScript);
-            if (!el) return {success: false, error: 'Element not found'};
-            if (el.tagName.toLowerCase() !== 'select') return {success: false, error: 'Element is not a select'};
-            
-            const values = [\(valuesJSON)];
-            for (const opt of el.options) {
-                opt.selected = values.includes(opt.value) || values.includes(opt.text);
-            }
-            el.dispatchEvent(new Event('change', {bubbles: true}));
-            return {success: true};
-        })()
-        """
-        
+            (function() {
+                const el = \(getElementScript);
+                if (!el) return {success: false, error: 'Element not found'};
+                if (el.tagName.toLowerCase() !== 'select') return {success: false, error: 'Element is not a select'};
+                
+                const values = [\(valuesJSON)];
+                for (const opt of el.options) {
+                    opt.selected = values.includes(opt.value) || values.includes(opt.text);
+                }
+                el.dispatchEvent(new Event('change', {bubbles: true}));
+                return {success: true};
+            })()
+            """
+
         let result = evaluateJavaScript(script)
-        
+
         if let error = result.error {
             return (false, error)
         }
-        
+
         if let dict = result.result as? [String: Any] {
             if let success = dict["success"] as? Bool, success {
                 return (true, nil)
@@ -559,7 +566,7 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
                 return (false, error)
             }
         }
-        
+
         return (false, "Unknown error")
     }
 
@@ -572,30 +579,30 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
         } else {
             return (false, "Either ref or selector must be provided")
         }
-        
+
         let script = """
-        (function() {
-            const el = \(getElementScript);
-            if (!el) return {success: false, error: 'Element not found'};
-            
-            const rect = el.getBoundingClientRect();
-            const x = rect.left + rect.width / 2;
-            const y = rect.top + rect.height / 2;
-            
-            el.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true, clientX: x, clientY: y}));
-            el.dispatchEvent(new MouseEvent('mouseover', {bubbles: true, clientX: x, clientY: y}));
-            el.dispatchEvent(new MouseEvent('mousemove', {bubbles: true, clientX: x, clientY: y}));
-            
-            return {success: true};
-        })()
-        """
-        
+            (function() {
+                const el = \(getElementScript);
+                if (!el) return {success: false, error: 'Element not found'};
+                
+                const rect = el.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                
+                el.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true, clientX: x, clientY: y}));
+                el.dispatchEvent(new MouseEvent('mouseover', {bubbles: true, clientX: x, clientY: y}));
+                el.dispatchEvent(new MouseEvent('mousemove', {bubbles: true, clientX: x, clientY: y}));
+                
+                return {success: true};
+            })()
+            """
+
         let result = evaluateJavaScript(script)
-        
+
         if let error = result.error {
             return (false, error)
         }
-        
+
         if let dict = result.result as? [String: Any] {
             if let success = dict["success"] as? Bool, success {
                 return (true, nil)
@@ -604,25 +611,27 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
                 return (false, error)
             }
         }
-        
+
         return (false, "Unknown error")
     }
 
     // MARK: - Scroll
 
-    func scroll(direction: String? = nil, ref: String? = nil, x: Int? = nil, y: Int? = nil) -> (success: Bool, error: String?) {
+    func scroll(
+        direction: String? = nil, ref: String? = nil, x: Int? = nil, y: Int? = nil
+    ) -> (success: Bool, error: String?) {
         let script: String
-        
+
         if let ref = ref {
             // Scroll to element
             script = """
-            (function() {
-                const el = window.__osaurus_refs?.get('\(ref)');
-                if (!el) return {success: false, error: 'Element ref not found'};
-                el.scrollIntoView({behavior: 'smooth', block: 'center'});
-                return {success: true};
-            })()
-            """
+                (function() {
+                    const el = window.__osaurus_refs?.get('\(ref)');
+                    if (!el) return {success: false, error: 'Element ref not found'};
+                    el.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    return {success: true};
+                })()
+                """
         } else if let direction = direction {
             // Scroll by direction
             let scrollAmount: (x: Int, y: Int)
@@ -634,32 +643,32 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
             default: scrollAmount = (0, 400)
             }
             script = """
-            (function() {
-                window.scrollBy({left: \(scrollAmount.x), top: \(scrollAmount.y), behavior: 'smooth'});
-                return {success: true};
-            })()
-            """
+                (function() {
+                    window.scrollBy({left: \(scrollAmount.x), top: \(scrollAmount.y), behavior: 'smooth'});
+                    return {success: true};
+                })()
+                """
         } else if let x = x, let y = y {
             // Scroll to position
             script = """
-            (function() {
-                window.scrollTo({left: \(x), top: \(y), behavior: 'smooth'});
-                return {success: true};
-            })()
-            """
+                (function() {
+                    window.scrollTo({left: \(x), top: \(y), behavior: 'smooth'});
+                    return {success: true};
+                })()
+                """
         } else {
             return (false, "Provide direction, ref, or x/y coordinates")
         }
-        
+
         let result = evaluateJavaScript(script)
-        
+
         if let error = result.error {
             return (false, error)
         }
-        
+
         // Wait for smooth scroll to complete
         Thread.sleep(forTimeInterval: 0.3)
-        
+
         return (true, nil)
     }
 
@@ -682,55 +691,58 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
             "pagedown": ("PageDown", "PageDown", 34),
             "space": (" ", "Space", 32),
         ]
-        
-        let keyInfo = keyMap[key.lowercased()] ?? (key, "Key\(key.uppercased())", Int(key.unicodeScalars.first?.value ?? 0))
-        
+
+        let keyInfo =
+            keyMap[key.lowercased()] ?? (key, "Key\(key.uppercased())", Int(key.unicodeScalars.first?.value ?? 0))
+
         let ctrlKey = modifiers.contains("ctrl") || modifiers.contains("control")
         let shiftKey = modifiers.contains("shift")
         let altKey = modifiers.contains("alt") || modifiers.contains("option")
         let metaKey = modifiers.contains("meta") || modifiers.contains("cmd") || modifiers.contains("command")
-        
+
         let script = """
-        (function() {
-            const target = document.activeElement || document.body;
-            const opts = {
-                key: '\(keyInfo.key)',
-                code: '\(keyInfo.code)',
-                keyCode: \(keyInfo.keyCode),
-                which: \(keyInfo.keyCode),
-                bubbles: true,
-                cancelable: true,
-                ctrlKey: \(ctrlKey),
-                shiftKey: \(shiftKey),
-                altKey: \(altKey),
-                metaKey: \(metaKey)
-            };
-            target.dispatchEvent(new KeyboardEvent('keydown', opts));
-            target.dispatchEvent(new KeyboardEvent('keypress', opts));
-            target.dispatchEvent(new KeyboardEvent('keyup', opts));
-            return {success: true};
-        })()
-        """
-        
+            (function() {
+                const target = document.activeElement || document.body;
+                const opts = {
+                    key: '\(keyInfo.key)',
+                    code: '\(keyInfo.code)',
+                    keyCode: \(keyInfo.keyCode),
+                    which: \(keyInfo.keyCode),
+                    bubbles: true,
+                    cancelable: true,
+                    ctrlKey: \(ctrlKey),
+                    shiftKey: \(shiftKey),
+                    altKey: \(altKey),
+                    metaKey: \(metaKey)
+                };
+                target.dispatchEvent(new KeyboardEvent('keydown', opts));
+                target.dispatchEvent(new KeyboardEvent('keypress', opts));
+                target.dispatchEvent(new KeyboardEvent('keyup', opts));
+                return {success: true};
+            })()
+            """
+
         let result = evaluateJavaScript(script)
-        
+
         if let error = result.error {
             return (false, error)
         }
-        
+
         return (true, nil)
     }
 
     // MARK: - Wait For
 
-    func waitFor(text: String? = nil, textGone: String? = nil, time: TimeInterval? = nil, timeout: TimeInterval = 10) -> (success: Bool, error: String?) {
+    func waitFor(
+        text: String? = nil, textGone: String? = nil, time: TimeInterval? = nil, timeout: TimeInterval = 10
+    ) -> (success: Bool, error: String?) {
         if let time = time {
             Thread.sleep(forTimeInterval: time)
             return (true, nil)
         }
-        
+
         let startTime = Date()
-        
+
         if let text = text {
             let escapedText = text.replacingOccurrences(of: "'", with: "\\'")
             while Date().timeIntervalSince(startTime) < timeout {
@@ -743,7 +755,7 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
             }
             return (false, "Timeout waiting for text: \(text)")
         }
-        
+
         if let textGone = textGone {
             let escapedText = textGone.replacingOccurrences(of: "'", with: "\\'")
             while Date().timeIntervalSince(startTime) < timeout {
@@ -756,7 +768,7 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
             }
             return (false, "Timeout waiting for text to disappear: \(textGone)")
         }
-        
+
         return (false, "Provide text, textGone, or time")
     }
 
@@ -864,9 +876,9 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
         navigationError = error
         navigationSemaphore.signal()
     }
-    
+
     // MARK: - Helpers
-    
+
     private func escapeSelector(_ selector: String) -> String {
         return selector.replacingOccurrences(of: "'", with: "\\'")
     }
@@ -939,7 +951,8 @@ private class PluginContext {
             return "{\"error\": \"\(escapeJSON(result.error ?? "Unknown error"))\"}"
         }
 
-        return "{\"success\": true, \"url\": \"\(escapeJSON(browser.currentURL ?? input.url))\", \"title\": \"\(escapeJSON(browser.currentTitle ?? ""))\"}"
+        return
+            "{\"success\": true, \"url\": \"\(escapeJSON(browser.currentURL ?? input.url))\", \"title\": \"\(escapeJSON(browser.currentTitle ?? ""))\"}"
     }
 
     func snapshot(args: String) -> String {
@@ -1244,8 +1257,12 @@ private var api: osr_plugin_api = {
         let manifest = """
             {
               "plugin_id": "osaurus.browser",
-              "version": "2.0.0",
+              "name": "Browser",
               "description": "Agent-friendly headless browser with ref-based interactions",
+              "license": "MIT",
+              "authors": ["Dinoki Labs"],
+              "min_macos": "13.0",
+              "min_osaurus": "0.5.0",
               "capabilities": {
                 "tools": [
                   {

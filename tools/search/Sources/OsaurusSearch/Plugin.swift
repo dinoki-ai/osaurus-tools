@@ -1163,8 +1163,12 @@ private var api: osr_plugin_api = {
         let manifest = """
             {
               "plugin_id": "osaurus.search",
-              "version": "1.0.0",
+              "name": "Search",
               "description": "Web search using DuckDuckGo (no API key required)",
+              "license": "MIT",
+              "authors": ["Dinoki Labs"],
+              "min_macos": "13.0",
+              "min_osaurus": "0.5.0",
               "capabilities": {
                 "tools": [
                   {"id": "search", "description": "Search the web using DuckDuckGo", "parameters": {"type":"object","properties":{"query":{"type":"string"},"max_results":{"type":"number"},"region":{"type":"string"}},"required":["query"]}, "requirements": [], "permission_policy": "ask"},

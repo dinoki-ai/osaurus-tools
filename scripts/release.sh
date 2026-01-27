@@ -30,32 +30,25 @@ print_error() { echo -e "${RED}✗${NC} $1"; }
 print_info() { echo -e "${YELLOW}→${NC} $1"; }
 print_header() { echo -e "${BLUE}$1${NC}"; }
 
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <tool-name|all> [version]"
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <tool-name|all> <version>"
     echo ""
     echo "Commands:"
     echo "  <tool-name>    Release a specific tool (e.g., time, git, browser)"
     echo "  all            Release all tools in the tools/ directory"
     echo ""
-    echo "Options:"
-    echo "  [version]      Override version from Plugin.swift (e.g., 1.0.0)"
+    echo "Arguments:"
+    echo "  <version>      Version to release (e.g., 1.0.0) - REQUIRED"
     echo ""
     echo "Examples:"
-    echo "  $0 time                    # Release time with version from Plugin.swift"
     echo "  $0 time 1.0.0              # Release time v1.0.0"
-    echo "  $0 all                     # Release all tools"
+    echo "  $0 git 2.0.0               # Release git v2.0.0"
+    echo "  $0 all 1.0.0               # Release all tools with version 1.0.0"
     exit 1
 fi
 
 TOOL_NAME="$1"
-VERSION_OVERRIDE="${2:-}"
-
-# Get version from Plugin.swift
-get_version() {
-    local tool_dir="$1"
-    local plugin_swift=$(find "$tool_dir/Sources" -name "Plugin.swift" -type f | head -1)
-    grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$plugin_swift" | head -1 | sed 's/.*"\([0-9][0-9.]*\)".*/\1/'
-}
+VERSION="$2"
 
 # Get plugin_id from Plugin.swift
 get_plugin_id() {
@@ -67,7 +60,7 @@ get_plugin_id() {
 # Create and push tag for a single tool
 release_tool() {
     local tool_name="$1"
-    local version_override="$2"
+    local version="$2"
     
     local tool_dir="$ROOT_DIR/tools/$tool_name"
     
@@ -80,13 +73,6 @@ release_tool() {
     if [ -z "$plugin_swift" ] || [ ! -f "$plugin_swift" ]; then
         print_error "Plugin.swift not found in $tool_dir/Sources"
         return 1
-    fi
-    
-    local version
-    if [ -n "$version_override" ]; then
-        version="$version_override"
-    else
-        version=$(get_version "$tool_dir")
     fi
     
     local plugin_id=$(get_plugin_id "$tool_dir")
@@ -119,29 +105,22 @@ FAILED=0
 
 if [ "$TOOL_NAME" == "all" ]; then
     print_header "=========================================="
-    print_header "  Releasing all tools"
+    print_header "  Releasing all tools v${VERSION}"
     print_header "=========================================="
     
     for tool_path in "$ROOT_DIR/tools"/*/; do
         tool=$(basename "$tool_path")
         if find "$tool_path/Sources" -name "Plugin.swift" -type f | head -1 | grep -q .; then
-            if release_tool "$tool" "$VERSION_OVERRIDE"; then
-                version=$(get_version "$tool_path")
-                TAGS_CREATED+=("${tool}-${version}")
+            if release_tool "$tool" "$VERSION"; then
+                TAGS_CREATED+=("${tool}-${VERSION}")
             else
                 ((FAILED++))
             fi
         fi
     done
 else
-    if release_tool "$TOOL_NAME" "$VERSION_OVERRIDE"; then
-        tool_dir="$ROOT_DIR/tools/$TOOL_NAME"
-        if [ -n "$VERSION_OVERRIDE" ]; then
-            TAGS_CREATED+=("${TOOL_NAME}-${VERSION_OVERRIDE}")
-        else
-            version=$(get_version "$tool_dir")
-            TAGS_CREATED+=("${TOOL_NAME}-${version}")
-        fi
+    if release_tool "$TOOL_NAME" "$VERSION"; then
+        TAGS_CREATED+=("${TOOL_NAME}-${VERSION}")
     else
         FAILED=1
     fi

@@ -161,8 +161,12 @@ private var api: osr_plugin_api = {
         let manifest = """
             {
               "plugin_id": "osaurus.time",
-              "version": "1.0.0",
+              "name": "Time",
               "description": "Get current time and format dates across timezones",
+              "license": "MIT",
+              "authors": ["Dinoki Labs"],
+              "min_macos": "13.0",
+              "min_osaurus": "0.5.0",
               "capabilities": {
                 "tools": [
                   {

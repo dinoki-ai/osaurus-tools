@@ -494,8 +494,12 @@ private var api: osr_plugin_api = {
         let manifest = """
             {
               "plugin_id": "osaurus.filesystem",
-              "version": "1.0.0",
+              "name": "Filesystem",
               "description": "Full access to the local file system for reading, writing, and managing files and directories",
+              "license": "MIT",
+              "authors": ["Dinoki Labs"],
+              "min_macos": "13.0",
+              "min_osaurus": "0.5.0",
               "capabilities": {
                 "tools": [
                   {"id": "read_file", "description": "Read any file from the file system", "parameters": {"type":"object","properties":{"path":{"type":"string"},"encoding":{"type":"string"}},"required":["path"]}, "requirements": [], "permission_policy": "ask"},

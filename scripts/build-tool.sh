@@ -39,19 +39,19 @@ print_error() { echo -e "${RED}✗${NC} $1"; }
 print_info() { echo -e "${YELLOW}→${NC} $1"; }
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <tool-name|all> [--version <version>]"
+    echo "Usage: $0 <tool-name|all> --version <version>"
     echo ""
     echo "Commands:"
     echo "  <tool-name>    Build a specific tool (e.g., time, git)"
     echo "  all            Build all tools in the tools/ directory"
     echo ""
     echo "Options:"
-    echo "  --version      Override version from Plugin.swift"
+    echo "  --version      Version string (required for release builds)"
     echo ""
     echo "Examples:"
-    echo "  $0 time"
+    echo "  $0 time --version 1.0.0"
     echo "  $0 git --version 1.0.0"
-    echo "  $0 all"
+    echo "  $0 all --version 1.0.0"
     exit 1
 fi
 
@@ -98,10 +98,11 @@ build_tool() {
         return 1
     fi
 
-    # Extract version from Plugin.swift if not provided
+    # Version must be provided
     local version="$version_override"
     if [ -z "$version" ]; then
-        version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$plugin_swift" | head -1 | sed 's/.*"\([0-9][0-9.]*\)".*/\1/')
+        print_error "Version is required. Use --version <version>"
+        return 1
     fi
 
     # Extract plugin_id from Plugin.swift
@@ -181,8 +182,8 @@ build_tool() {
     # Get file size
     local size=$(stat -f%z "$zip_path" 2>/dev/null || stat --printf="%s" "$zip_path")
 
-    # Clean up staging
-    rm -rf "$staging_dir"
+    # Keep staging directory with dylib for manifest extraction
+    # Can be used with: osaurus manifest extract build/<tool>/staging/*.dylib
 
     # Write build info
     cat > "$build_output/build-info.json" <<EOF
@@ -192,6 +193,7 @@ build_tool() {
   "artifact": "$zip_name",
   "sha256": "$sha256",
   "size": $size,
+  "dylib": "staging/lib${product_name}.dylib",
   "built_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 }
 EOF

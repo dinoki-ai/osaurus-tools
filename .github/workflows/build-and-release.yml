@@ -32,11 +32,12 @@ jobs:
     runs-on: macos-latest
 
     outputs:
-      plugin_id: ${{ steps.build.outputs.plugin_id }}
-      version: ${{ steps.build.outputs.version }}
-      artifact_name: ${{ steps.build.outputs.artifact_name }}
-      sha256: ${{ steps.build.outputs.sha256 }}
-      size: ${{ steps.build.outputs.size }}
+      plugin_id: ${{ steps.extract.outputs.plugin_id }}
+      manifest: ${{ steps.extract.outputs.manifest }}
+      version: ${{ steps.parse.outputs.version }}
+      artifact_name: ${{ steps.package.outputs.artifact_name }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+      size: ${{ steps.package.outputs.size }}
       minisign_signature_b64: ${{ steps.sign.outputs.minisign_signature_b64 }}
 
     steps:
@@ -122,27 +123,109 @@ jobs:
 
       - name: Build plugin
         id: build
+        run: |
+          TOOL="${{ steps.parse.outputs.tool }}"
+          TOOL_DIR="tools/$TOOL"
+
+          cd "$TOOL_DIR"
+          swift build -c release
+
+          # Find the built dylib
+          DYLIB=$(ls .build/release/*.dylib 2>/dev/null | head -1)
+          if [ -z "$DYLIB" ] || [ ! -f "$DYLIB" ]; then
+            echo "::error::No dylib found in .build/release/"
+            ls -la .build/release/
+            exit 1
+          fi
+
+          echo "dylib=$TOOL_DIR/$DYLIB" >> $GITHUB_OUTPUT
+          echo "tool_dir=$TOOL_DIR" >> $GITHUB_OUTPUT
+          echo "Found dylib: $DYLIB"
+
+      - name: Install Osaurus CLI
+        run: |
+          brew update
+          brew install --cask osaurus
+
+      - name: Extract manifest from dylib
+        id: extract
+        run: |
+          DYLIB="${{ steps.build.outputs.dylib }}"
+          MANIFEST=$(osaurus manifest extract "$DYLIB")
+
+          # Validate JSON
+          echo "$MANIFEST" | jq . > /dev/null || {
+            echo "::error::Invalid JSON from manifest extraction"
+            exit 1
+          }
+
+          # Extract plugin_id for use in later steps
+          PLUGIN_ID=$(echo "$MANIFEST" | jq -r '.plugin_id')
+          if [ -z "$PLUGIN_ID" ] || [ "$PLUGIN_ID" = "null" ]; then
+            echo "::error::No plugin_id in manifest"
+            exit 1
+          fi
+
+          echo "plugin_id=$PLUGIN_ID" >> $GITHUB_OUTPUT
+
+          # Store compacted manifest using heredoc syntax to handle large outputs
+          MANIFEST_COMPACT=$(echo "$MANIFEST" | jq -c .)
+          {
+            echo "manifest<<EOF"
+            echo "$MANIFEST_COMPACT"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+          echo "Extracted plugin_id: $PLUGIN_ID"
+          echo "Full manifest:"
+          echo "$MANIFEST" | jq .
+
+      - name: Code sign dylib
         env:
           CODESIGN_IDENTITY: ${{ steps.codesign.outputs.identity }}
         run: |
+          DYLIB="${{ steps.build.outputs.dylib }}"
+
+          if [ -n "$CODESIGN_IDENTITY" ]; then
+            echo "Signing dylib with Developer ID..."
+            codesign --force --options runtime --timestamp --sign "$CODESIGN_IDENTITY" "$DYLIB"
+            codesign --verify --verbose "$DYLIB"
+            echo "Signed with Developer ID"
+          else
+            echo "Ad-hoc signing dylib (no CODESIGN_IDENTITY set)..."
+            codesign -s - -f "$DYLIB"
+            echo "Ad-hoc signed"
+          fi
+
+      - name: Package artifact
+        id: package
+        run: |
           TOOL="${{ steps.parse.outputs.tool }}"
           VERSION="${{ steps.parse.outputs.version }}"
+          PLUGIN_ID="${{ steps.extract.outputs.plugin_id }}"
+          DYLIB="${{ steps.build.outputs.dylib }}"
 
-          ./scripts/build-tool.sh "$TOOL" --version "$VERSION"
+          # Create build output directory
+          BUILD_DIR="build/$TOOL"
+          mkdir -p "$BUILD_DIR"
 
-          # Read build info
-          BUILD_INFO="build/$TOOL/build-info.json"
+          # Create artifact name
+          ARTIFACT="${PLUGIN_ID}-${VERSION}-macos-arm64.zip"
 
-          PLUGIN_ID=$(python3 -c "import json; print(json.load(open('$BUILD_INFO'))['plugin_id'])")
-          ARTIFACT=$(python3 -c "import json; print(json.load(open('$BUILD_INFO'))['artifact'])")
-          SHA256=$(python3 -c "import json; print(json.load(open('$BUILD_INFO'))['sha256'])")
-          SIZE=$(python3 -c "import json; print(json.load(open('$BUILD_INFO'))['size'])")
+          # Create zip with just the dylib
+          zip -j "$BUILD_DIR/$ARTIFACT" "$DYLIB"
 
-          echo "plugin_id=$PLUGIN_ID" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # Compute SHA256 and size
+          SHA256=$(shasum -a 256 "$BUILD_DIR/$ARTIFACT" | cut -d ' ' -f 1)
+          SIZE=$(stat -f%z "$BUILD_DIR/$ARTIFACT" 2>/dev/null || stat --printf="%s" "$BUILD_DIR/$ARTIFACT")
+
           echo "artifact_name=$ARTIFACT" >> $GITHUB_OUTPUT
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
           echo "size=$SIZE" >> $GITHUB_OUTPUT
+
+          echo "Created artifact: $ARTIFACT"
+          echo "SHA256: $SHA256"
+          echo "Size: $SIZE bytes"
 
       - name: Sign with Minisign
         id: sign
@@ -158,7 +241,7 @@ jobs:
           fi
 
           TOOL="${{ steps.parse.outputs.tool }}"
-          ARTIFACT="${{ steps.build.outputs.artifact_name }}"
+          ARTIFACT="${{ steps.package.outputs.artifact_name }}"
 
           # Install minisign
           brew install minisign
@@ -201,10 +284,10 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build.outputs.artifact_name }}
+          name: ${{ steps.package.outputs.artifact_name }}
           path: |
-            build/${{ steps.parse.outputs.tool }}/${{ steps.build.outputs.artifact_name }}
-            build/${{ steps.parse.outputs.tool }}/${{ steps.build.outputs.artifact_name }}.minisig
+            build/${{ steps.parse.outputs.tool }}/${{ steps.package.outputs.artifact_name }}
+            build/${{ steps.parse.outputs.tool }}/${{ steps.package.outputs.artifact_name }}.minisig
           if-no-files-found: warn
 
       - name: Cleanup Keychain
@@ -299,9 +382,11 @@ jobs:
           echo "tool=$TOOL" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      - name: Update plugin registry JSON
+      - name: Generate registry manifest
         env:
+          MANIFEST: ${{ needs.build.outputs.manifest }}
           MINISIGN_PUBLIC_KEY: ${{ secrets.MINISIGN_PUBLIC_KEY }}
+          MINISIGN_SIG_B64: ${{ needs.build.outputs.minisign_signature_b64 }}
         run: |
           PLUGIN_ID="${{ needs.build.outputs.plugin_id }}"
           VERSION="${{ needs.build.outputs.version }}"
@@ -309,96 +394,98 @@ jobs:
           SHA256="${{ needs.build.outputs.sha256 }}"
           SIZE="${{ needs.build.outputs.size }}"
           TAG="${{ steps.tag.outputs.tag }}"
-          MINISIGN_SIG_B64="${{ needs.build.outputs.minisign_signature_b64 }}"
 
           # Decode base64 signature if present
           if [ -n "$MINISIGN_SIG_B64" ]; then
-            MINISIGN_SIG=$(echo "$MINISIGN_SIG_B64" | base64 -d)
+            SIGNATURE=$(echo "$MINISIGN_SIG_B64" | base64 -d)
           else
-            MINISIGN_SIG=""
+            SIGNATURE=""
           fi
 
-          REGISTRY_FILE="plugins/${PLUGIN_ID}.json"
+          # Extract fields from manifest with defaults
+          NAME=$(echo "$MANIFEST" | jq -r '.name // empty')
+          DESCRIPTION=$(echo "$MANIFEST" | jq -r '.description // ""')
+          LICENSE=$(echo "$MANIFEST" | jq -r '.license // "MIT"')
+          AUTHORS=$(echo "$MANIFEST" | jq -c '.authors // ["Dinoki Labs"]')
+          MIN_MACOS=$(echo "$MANIFEST" | jq -r '.min_macos // "13.0"')
+          MIN_OSAURUS=$(echo "$MANIFEST" | jq -r '.min_osaurus // "0.5.0"')
+          TOOLS=$(echo "$MANIFEST" | jq -c '.capabilities.tools // []')
+
+          # Default name from plugin_id suffix if not set
+          if [ -z "$NAME" ]; then
+            NAME=$(echo "$PLUGIN_ID" | rev | cut -d. -f1 | rev)
+            NAME="$(tr '[:lower:]' '[:upper:]' <<< ${NAME:0:1})${NAME:1}"
+          fi
 
           # Download URL for the release artifact
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ARTIFACT}"
 
-          # Write signature to temp file for Python to read (preserves newlines)
-          echo "$MINISIGN_SIG" > /tmp/minisign_sig.txt
+          # Build registry JSON using jq for proper escaping
+          jq -n \
+            --arg plugin_id "$PLUGIN_ID" \
+            --arg name "$NAME" \
+            --arg description "$DESCRIPTION" \
+            --arg homepage "https://github.com/${{ github.repository }}" \
+            --arg license "$LICENSE" \
+            --argjson authors "$AUTHORS" \
+            --argjson tools "$TOOLS" \
+            --arg minisign_pubkey "$MINISIGN_PUBLIC_KEY" \
+            --arg min_macos "$MIN_MACOS" \
+            --arg min_osaurus "$MIN_OSAURUS" \
+            --arg version "$VERSION" \
+            --arg release_date "$(date -u +%Y-%m-%d)" \
+            --arg url "$DOWNLOAD_URL" \
+            --arg sha256 "$SHA256" \
+            --argjson size "$SIZE" \
+            --arg signature "$SIGNATURE" \
+            '{
+              plugin_id: $plugin_id,
+              name: $name,
+              description: $description,
+              homepage: $homepage,
+              license: $license,
+              authors: $authors,
+              capabilities: { tools: $tools },
+              public_keys: { minisign: $minisign_pubkey },
+              requires: { min_macos: $min_macos, osaurus_min_version: $min_osaurus },
+              versions: [{
+                version: $version,
+                release_date: $release_date,
+                artifacts: [{
+                  os: "macos",
+                  arch: "arm64",
+                  url: $url,
+                  sha256: $sha256,
+                  size: $size,
+                  min_macos: $min_macos,
+                  minisign: { signature: $signature }
+                }]
+              }]
+            }' > /tmp/registry-manifest.json
 
-          python3 << EOF
-          import json
-          import os
-          from datetime import datetime
+          echo "Generated registry manifest:"
+          cat /tmp/registry-manifest.json | jq .
 
-          plugin_id = "$PLUGIN_ID"
-          version = "$VERSION"
-          sha256 = "$SHA256"
-          size = int("$SIZE")
-          url = "$DOWNLOAD_URL"
-          registry_file = "$REGISTRY_FILE"
-          minisign_public_key = os.environ.get("MINISIGN_PUBLIC_KEY", "")
+      - name: Update plugin registry JSON
+        run: |
+          PLUGIN_ID="${{ needs.build.outputs.plugin_id }}"
+          VERSION="${{ needs.build.outputs.version }}"
+          REGISTRY_FILE="plugins/${PLUGIN_ID}.json"
 
-          # Read signature from file to preserve newlines
-          try:
-              with open('/tmp/minisign_sig.txt', 'r') as f:
-                  minisign_sig = f.read().strip()
-          except:
-              minisign_sig = ""
+          if [ -f "$REGISTRY_FILE" ]; then
+            # Merge new version into existing registry file
+            # Keep existing metadata, prepend new version to versions array
+            jq --slurpfile new /tmp/registry-manifest.json '
+              .versions = [$new[0].versions[0]] + .versions |
+              .versions |= unique_by(.version)
+            ' "$REGISTRY_FILE" > /tmp/updated.json && mv /tmp/updated.json "$REGISTRY_FILE"
+          else
+            # Use the generated manifest as-is for new plugins
+            cp /tmp/registry-manifest.json "$REGISTRY_FILE"
+          fi
 
-          # Load existing registry or create new
-          try:
-              with open(registry_file, 'r') as f:
-                  data = json.load(f)
-          except FileNotFoundError:
-              data = {
-                  "plugin_id": plugin_id,
-                  "versions": []
-              }
-
-          # Add public key if available and not already present
-          if minisign_public_key and "public_keys" not in data:
-              data["public_keys"] = {"minisign": minisign_public_key}
-
-          # Check if version already exists
-          existing_idx = None
-          for i, v in enumerate(data.get("versions", [])):
-              if v.get("version") == version:
-                  existing_idx = i
-                  break
-
-          artifact = {
-              "os": "macos",
-              "arch": "arm64",
-              "url": url,
-              "sha256": sha256,
-              "size": size
-          }
-
-          # Add minisign signature if available
-          if minisign_sig:
-              artifact["minisign"] = {
-                  "signature": minisign_sig
-              }
-
-          new_version = {
-              "version": version,
-              "release_date": datetime.utcnow().strftime("%Y-%m-%d"),
-              "artifacts": [artifact]
-          }
-
-          if existing_idx is not None:
-              data["versions"][existing_idx] = new_version
-          else:
-              data["versions"].insert(0, new_version)
-
-          with open(registry_file, 'w') as f:
-              json.dump(data, f, indent=2)
-
-          print(f"Updated {registry_file} with version {version}")
-          if minisign_sig:
-              print("Minisign signature included")
-          EOF
+          echo "Updated $REGISTRY_FILE with version $VERSION"
+          cat "$REGISTRY_FILE" | jq .
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6

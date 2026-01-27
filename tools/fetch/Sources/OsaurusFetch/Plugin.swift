@@ -394,8 +394,12 @@ private var api: osr_plugin_api = {
         let manifest = """
             {
               "plugin_id": "osaurus.fetch",
-              "version": "1.0.0",
+              "name": "Fetch",
               "description": "HTTP client for fetching web content and making API requests",
+              "license": "MIT",
+              "authors": ["Dinoki Labs"],
+              "min_macos": "13.0",
+              "min_osaurus": "0.5.0",
               "capabilities": {
                 "tools": [
                   {"id": "fetch", "description": "Fetch content from a URL with full HTTP control", "parameters": {"type":"object","properties":{"url":{"type":"string"},"method":{"type":"string"},"headers":{"type":"object"},"body":{"type":"string"},"timeout":{"type":"number"}},"required":["url"]}, "requirements": [], "permission_policy": "ask"},
