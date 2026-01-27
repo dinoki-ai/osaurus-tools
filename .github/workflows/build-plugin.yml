@@ -9,6 +9,9 @@ name: Build Plugin (Reusable)
 # 3. Package and sign the artifact
 # 4. Create a GitHub Release
 # 5. Submit a PR to the osaurus-tools registry
+#
+# Note: Some outputs are base64 encoded to prevent GitHub Actions from
+# blocking them due to secret substring matching.
 
 on:
   workflow_call:
@@ -45,10 +48,9 @@ jobs:
     runs-on: ${{ inputs.macos_version }}
     outputs:
       version: ${{ steps.version.outputs.version }}
-      plugin_id: ${{ steps.extract.outputs.plugin_id }}
-      manifest: ${{ steps.extract.outputs.manifest }}
-      artifact_url: ${{ steps.urls.outputs.artifact_url }}
-      artifact_name: ${{ steps.package.outputs.artifact }}
+      plugin_id_b64: ${{ steps.extract.outputs.plugin_id_b64 }}
+      manifest_b64: ${{ steps.extract.outputs.manifest_b64 }}
+      artifact_url_b64: ${{ steps.urls.outputs.artifact_url_b64 }}
       sha256: ${{ steps.package.outputs.sha256 }}
       signature_b64: ${{ steps.sign.outputs.signature_b64 }}
 
@@ -62,7 +64,6 @@ jobs:
           VERSION="${GITHUB_REF#refs/tags/}"
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Extracted version: $VERSION"
 
       - name: Set up Swift
         uses: swift-actions/setup-swift@v2
@@ -75,17 +76,12 @@ jobs:
       - name: Find dylib
         id: find
         run: |
-          # Auto-detect the dylib (one plugin = one dylib)
           DYLIB=$(ls .build/release/*.dylib 2>/dev/null | head -1)
-
           if [ -z "$DYLIB" ] || [ ! -f "$DYLIB" ]; then
             echo "::error::No dylib found in .build/release/"
-            ls -la .build/release/
             exit 1
           fi
-
           echo "dylib=$DYLIB" >> $GITHUB_OUTPUT
-          echo "Found: $DYLIB"
 
       - name: Install Osaurus CLI
         run: |
@@ -97,13 +93,11 @@ jobs:
         run: |
           MANIFEST=$(osaurus manifest extract "${{ steps.find.outputs.dylib }}")
 
-          # Validate JSON
           echo "$MANIFEST" | jq . > /dev/null || {
             echo "::error::Invalid JSON from manifest extraction"
             exit 1
           }
 
-          # Extract plugin_id for use in later steps
           PLUGIN_ID=$(echo "$MANIFEST" | jq -r '.plugin_id')
           if [ -z "$PLUGIN_ID" ] || [ "$PLUGIN_ID" = "null" ]; then
             echo "::error::No plugin_id in manifest"
@@ -111,18 +105,10 @@ jobs:
           fi
 
           echo "plugin_id=$PLUGIN_ID" >> $GITHUB_OUTPUT
-
-          # Store compacted manifest using heredoc syntax to handle large outputs
-          MANIFEST_COMPACT=$(echo "$MANIFEST" | jq -c .)
-          {
-            echo "manifest<<EOF"
-            echo "$MANIFEST_COMPACT"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+          echo "plugin_id_b64=$(echo -n "$PLUGIN_ID" | base64)" >> $GITHUB_OUTPUT
+          echo "manifest_b64=$(echo "$MANIFEST" | jq -c . | base64)" >> $GITHUB_OUTPUT
 
           echo "Extracted plugin_id: $PLUGIN_ID"
-          echo "Full manifest:"
-          echo "$MANIFEST" | jq .
 
       - name: Code sign
         env:
@@ -157,8 +143,7 @@ jobs:
 
           zip -j "$ARTIFACT" "${{ steps.find.outputs.dylib }}"
 
-          SHA256=$(shasum -a 256 "$ARTIFACT" | cut -d ' ' -f 1)
-          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "sha256=$(shasum -a 256 "$ARTIFACT" | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
           echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
 
       - name: Sign with minisign
@@ -170,13 +155,9 @@ jobs:
           brew install minisign
           echo "$MINISIGN_SECRET_KEY" > $RUNNER_TEMP/minisign.key
 
-          # Sign using legacy format (-l) for compatibility with Osaurus
-          # Modern minisign uses "ED" algorithm ID, but Osaurus expects "Ed" (legacy format)
           echo "$MINISIGN_PASSWORD" | minisign -Slm "${{ steps.package.outputs.artifact }}" -s $RUNNER_TEMP/minisign.key
 
-          # Base64 encode signature for safe transport between jobs
-          SIGNATURE_B64=$(base64 -i "${{ steps.package.outputs.artifact }}.minisig")
-          echo "signature_b64=$SIGNATURE_B64" >> $GITHUB_OUTPUT
+          echo "signature_b64=$(base64 -i "${{ steps.package.outputs.artifact }}.minisig")" >> $GITHUB_OUTPUT
 
           rm -f $RUNNER_TEMP/minisign.key
 
@@ -193,7 +174,7 @@ jobs:
         id: urls
         run: |
           ARTIFACT_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.package.outputs.artifact }}"
-          echo "artifact_url=$ARTIFACT_URL" >> $GITHUB_OUTPUT
+          echo "artifact_url_b64=$(echo -n "$ARTIFACT_URL" | base64)" >> $GITHUB_OUTPUT
 
   registry-pr:
     needs: build
@@ -202,15 +183,16 @@ jobs:
     steps:
       - name: Generate registry manifest
         env:
-          MANIFEST: ${{ needs.build.outputs.manifest }}
+          MANIFEST_B64: ${{ needs.build.outputs.manifest_b64 }}
+          PLUGIN_ID_B64: ${{ needs.build.outputs.plugin_id_b64 }}
+          ARTIFACT_URL_B64: ${{ needs.build.outputs.artifact_url_b64 }}
           SIGNATURE_B64: ${{ needs.build.outputs.signature_b64 }}
         run: |
-          PLUGIN_ID="${{ needs.build.outputs.plugin_id }}"
-
-          # Decode signature from base64
+          PLUGIN_ID=$(echo "$PLUGIN_ID_B64" | base64 -d)
+          MANIFEST=$(echo "$MANIFEST_B64" | base64 -d)
+          ARTIFACT_URL=$(echo "$ARTIFACT_URL_B64" | base64 -d)
           SIGNATURE=$(echo "$SIGNATURE_B64" | base64 -d)
 
-          # Extract fields with defaults
           NAME=$(echo "$MANIFEST" | jq -r '.name // empty')
           DESCRIPTION=$(echo "$MANIFEST" | jq -r '.description // ""')
           LICENSE=$(echo "$MANIFEST" | jq -r '.license // "MIT"')
@@ -219,13 +201,11 @@ jobs:
           MIN_OSAURUS=$(echo "$MANIFEST" | jq -r '.min_osaurus // "0.5.0"')
           TOOLS=$(echo "$MANIFEST" | jq -c '.capabilities.tools // []')
 
-          # Default name from plugin_id suffix if not set
           if [ -z "$NAME" ]; then
             NAME=$(echo "$PLUGIN_ID" | rev | cut -d. -f1 | rev)
             NAME="$(tr '[:lower:]' '[:upper:]' <<< ${NAME:0:1})${NAME:1}"
           fi
 
-          # Build registry JSON using jq for proper escaping
           jq -n \
             --arg plugin_id "$PLUGIN_ID" \
             --arg name "$NAME" \
@@ -239,7 +219,7 @@ jobs:
             --arg min_osaurus "$MIN_OSAURUS" \
             --arg version "${{ needs.build.outputs.version }}" \
             --arg release_date "$(date -u +%Y-%m-%d)" \
-            --arg url "${{ needs.build.outputs.artifact_url }}" \
+            --arg url "$ARTIFACT_URL" \
             --arg sha256 "${{ needs.build.outputs.sha256 }}" \
             --arg signature "$SIGNATURE" \
             '{
@@ -266,7 +246,6 @@ jobs:
               }]
             }' > registry-manifest.json
 
-          echo "Generated registry manifest:"
           cat registry-manifest.json | jq .
 
       - name: Upload manifest artifact
@@ -278,30 +257,26 @@ jobs:
       - name: Create PR via fork
         env:
           GH_TOKEN: ${{ secrets.REGISTRY_PAT }}
+          PLUGIN_ID_B64: ${{ needs.build.outputs.plugin_id_b64 }}
         run: |
-          PLUGIN_ID="${{ needs.build.outputs.plugin_id }}"
+          PLUGIN_ID=$(echo "$PLUGIN_ID_B64" | base64 -d)
           VERSION="${{ needs.build.outputs.version }}"
           OWNER="${{ github.repository_owner }}"
           BRANCH="plugin/${PLUGIN_ID}-${VERSION}"
 
-          # Fork if needed
           gh repo fork dinoki-ai/osaurus-tools --clone=false || true
           sleep 3
 
-          # Clone fork
           git clone "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/osaurus-tools.git" /tmp/registry
           cd /tmp/registry
 
-          # Sync with upstream
           git remote add upstream https://github.com/dinoki-ai/osaurus-tools.git
           git fetch upstream
           git checkout -B master upstream/master
           git push origin master --force
 
-          # Create branch
           git checkout -b "$BRANCH"
 
-          # Add/update manifest
           MANIFEST_PATH="plugins/${PLUGIN_ID}.json"
           mkdir -p plugins
 
@@ -313,21 +288,19 @@ jobs:
             cp "$GITHUB_WORKSPACE/registry-manifest.json" "$MANIFEST_PATH"
           fi
 
-          # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "$MANIFEST_PATH"
           git commit -m "Add ${PLUGIN_ID} v${VERSION}"
           git push origin "$BRANCH"
 
-          # Create PR
           gh pr create \
             --repo dinoki-ai/osaurus-tools \
             --head "${OWNER}:${BRANCH}" \
             --title "Add ${PLUGIN_ID} v${VERSION}" \
             --body "**Plugin:** \`${PLUGIN_ID}\`
-          **Version:** \`${VERSION}\`
-          **Source:** [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
+**Version:** \`${VERSION}\`
+**Source:** [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
 
-          ---
-          *Auto-generated from plugin manifest*"
+---
+*Auto-generated from plugin manifest*"
