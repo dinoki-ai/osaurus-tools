@@ -66,6 +66,22 @@
           }
         }
       ]
+    },
+    {
+      "version": "1.0.1",
+      "release_date": "2026-01-27",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-reminders/releases/download/1.0.1/osaurus.reminders-1.0.1-macos-arm64.zip",
+          "sha256": "3a34c50eb2bfe00d5a3989722c65c7ce9943cf963f5010181515672c7961474e",
+          "min_macos": "13.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWREzUdfZma6LqkwSXmOwqX2j0BJFZeWqURhMm+IzN15shz1ENkI4oUjb90e7vZFqdO/zpzmVLZgT0+i3NkURdnro97OEC18vQ8=\ntrusted comment: timestamp:1769501560\tfile:osaurus.reminders-1.0.1-macos-arm64.zip\npR4VhJDYfXf1BOtLb4FvsUiTekZhiulVwfnCSemNet6cp6V3fX/cmm++WlyRt3tLtrubDPkFSb0ojTNMUeotBg=="
+          }
+        }
+      ]
     }
   ]
 }
