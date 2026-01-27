@@ -159,7 +159,6 @@ Your plugin's `get_manifest()` function must return valid JSON with these fields
 | Field                 | Required | Description                                      |
 | --------------------- | -------- | ------------------------------------------------ |
 | `plugin_id`           | Yes      | Unique identifier (e.g., `myname.weather`)       |
-| `version`             | Yes      | Semantic version (e.g., `1.0.0`)                 |
 | `description`         | Yes      | Brief description of what the plugin does        |
 | `capabilities.tools`  | Yes      | Array of tool definitions                        |
 | `name`                | No       | Display name (defaults to plugin_id suffix)      |
@@ -167,6 +166,8 @@ Your plugin's `get_manifest()` function must return valid JSON with these fields
 | `authors`             | No       | Array of author names (defaults to repo owner)   |
 | `min_macos`           | No       | Minimum macOS version (defaults to `13.0`)       |
 | `min_osaurus`         | No       | Minimum Osaurus version (defaults to `0.5.0`)    |
+
+Note: Version is extracted from the Git tag (e.g., `v1.0.0` or `1.0.0`), not from the manifest.
 
 ### 2. Add Release Workflow
 
