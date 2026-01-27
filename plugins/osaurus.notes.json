@@ -43,6 +43,22 @@
           }
         }
       ]
+    },
+    {
+      "version": "1.0.1",
+      "release_date": "2026-01-27",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-notes/releases/download/1.0.1/osaurus.notes-1.0.1-macos-arm64.zip",
+          "sha256": "d61b94dd823285563a79c1f48d9120c9a2234a38139f3986d1fa7e27ed109d8b",
+          "min_macos": "13.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWRdaSQL/7fTgS/amwuMFHcMokZeIInt9LwgjW0UzOqi3sE+ekFWwp2LwEuEh+2wSS6rgLSWDXXMIsiWXZoq9drcoZ/QAViR4wQ=\ntrusted comment: timestamp:1769505859\tfile:osaurus.notes-1.0.1-macos-arm64.zip\n3C/le1wxrsGKyygOXCeYnVSVu9cyXWXcoTL0GviTHJjOmL5sYRtPJ4y+kqJlDeVScJ3ZzTRx1NDEGMkgBeOCBw=="
+          }
+        }
+      ]
     }
   ]
 }
