@@ -231,16 +231,19 @@ The workflow will:
 
 ```bash
 # Build a single tool
-./scripts/build-tool.sh time
+./scripts/build-tool.sh time --version 1.0.0
 
 # Build all tools
-./scripts/build-tool.sh all
-
-# Build with specific version
-./scripts/build-tool.sh git --version 1.0.0
+./scripts/build-tool.sh all --version 1.0.0
 ```
 
-Build output goes to `build/<tool-name>/`.
+Build output goes to `build/<tool-name>/`. The `--version` flag is required.
+
+To extract and verify the manifest from a built plugin:
+
+```bash
+osaurus manifest extract build/time/staging/*.dylib | jq .
+```
 
 ### Creating a New Tool
 
@@ -257,23 +260,20 @@ Build output goes to `build/<tool-name>/`.
 3. Build and test:
 
    ```bash
-   ./scripts/build-tool.sh mytool
+   ./scripts/build-tool.sh mytool --version 1.0.0
    osaurus tools install ./build/mytool/osaurus.mytool-1.0.0.zip
    ```
 
 ### Releasing
 
 ```bash
-# Release a single tool
-./scripts/release.sh time
+# Release a single tool (version is required)
+./scripts/release.sh time 1.0.0
 git push origin time-1.0.0
 
-# Release all tools
-./scripts/release.sh all
+# Release all tools with the same version
+./scripts/release.sh all 1.0.0
 git push origin --tags
-
-# Release with explicit version
-./scripts/release.sh time 1.0.0
 ```
 
 The GitHub Actions workflow will:
