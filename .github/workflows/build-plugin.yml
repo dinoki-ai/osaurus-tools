@@ -106,7 +106,13 @@ jobs:
 
           echo "plugin_id=$PLUGIN_ID" >> $GITHUB_OUTPUT
           echo "plugin_id_b64=$(echo -n "$PLUGIN_ID" | base64)" >> $GITHUB_OUTPUT
-          echo "manifest_b64=$(echo "$MANIFEST" | jq -c . | base64)" >> $GITHUB_OUTPUT
+
+          # Use heredoc for manifest_b64 to handle newlines from base64 wrapping
+          {
+            echo "manifest_b64<<EOF"
+            echo "$MANIFEST" | jq -c . | base64
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
           echo "Extracted plugin_id: $PLUGIN_ID"
 
@@ -145,6 +151,13 @@ jobs:
 
           echo "sha256=$(shasum -a 256 "$ARTIFACT" | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
           echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
+          
+          # Use heredoc for base64 output
+          {
+            echo "artifact_b64<<EOF"
+            echo -n "$ARTIFACT" | base64
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Sign with minisign
         id: sign
@@ -174,7 +187,13 @@ jobs:
         id: urls
         run: |
           ARTIFACT_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.package.outputs.artifact }}"
-          echo "artifact_url_b64=$(echo -n "$ARTIFACT_URL" | base64)" >> $GITHUB_OUTPUT
+          
+          # Use heredoc for base64 output
+          {
+            echo "artifact_url_b64<<EOF"
+            echo -n "$ARTIFACT_URL" | base64
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
   registry-pr:
     needs: build
