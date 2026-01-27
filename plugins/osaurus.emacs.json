@@ -4,7 +4,9 @@
   "description": "Execute Emacs Lisp code in a running Emacs instance via emacsclient",
   "homepage": "https://github.com/dinoki-ai/osaurus-emacs",
   "license": "MIT",
-  "authors": ["dinoki-ai"],
+  "authors": [
+    "dinoki-ai"
+  ],
   "capabilities": {
     "tools": [
       {
@@ -30,6 +32,22 @@
           "size": 21304,
           "minisign": {
             "signature": "untrusted comment: signature from minisign secret key\nRWReb8UOobdnaGlUwr+Rr1IY14wuujJMSl2mdg9eEXJXw/+jPojEybsKyokVuozJWfx8AJjXzR3FRQjvn39rCW582+eGE8x+LA0=\ntrusted comment: timestamp:1766176992\tfile:osaurus.emacs-1.0.1.zip\nEWYE6HLHbXaNwGx0e1cm8CWPIEO4psghgbJapxFJyED7PRKtja80llYvU1c3XLRMXdsk+xMF/bzpFJ80bf3HDA=="
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.0.2",
+      "release_date": "2026-01-27",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-emacs/releases/download/1.0.2/osaurus.emacs-1.0.2-macos-arm64.zip",
+          "sha256": "ff0722f504969efda550b9ddca6e37966f9cbbb222c3c7d8a9ab947d1fb8261b",
+          "min_macos": "13.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWReb8UOobdnaLA+ORwPaG33B3pvc3l1H5E1C8NU/HGbbf3TKe/pGdmBPOs1xXIRsGbQa6v3JPi3c2XBfTF81Bq5o8SFJOrNLQ8=\ntrusted comment: timestamp:1769509828\tfile:osaurus.emacs-1.0.2-macos-arm64.zip\n0nT9fhLX5FAWtEoN2eS0uD2VSoa45F9yZG5REOKLTVVJ4gcy0+jNBkQMabDGtXqZU9zgAlEwZ31M3Jb4gcunAQ=="
           }
         }
       ]
