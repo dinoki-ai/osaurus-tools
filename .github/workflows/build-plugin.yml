@@ -294,8 +294,17 @@ jobs:
           git commit -m "Add ${PLUGIN_ID} v${VERSION}"
           git push origin "$BRANCH"
 
+          printf '%s\n' \
+            "**Plugin:** \`${PLUGIN_ID}\`" \
+            "**Version:** \`${VERSION}\`" \
+            "**Source:** [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})" \
+            "" \
+            "---" \
+            "*Auto-generated from plugin manifest*" \
+            > /tmp/pr-body.md
+
           gh pr create \
             --repo dinoki-ai/osaurus-tools \
             --head "${OWNER}:${BRANCH}" \
             --title "Add ${PLUGIN_ID} v${VERSION}" \
-            --body "Plugin: ${PLUGIN_ID} | Version: ${VERSION} | Source: ${{ github.repository }}"
+            --body-file /tmp/pr-body.md
