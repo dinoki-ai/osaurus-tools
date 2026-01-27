@@ -4,7 +4,9 @@
   "description": "Interact with macOS Messages.app - send and read iMessages",
   "homepage": "https://github.com/dinoki-ai/osaurus-messages",
   "license": "MIT",
-  "authors": ["dinoki-ai"],
+  "authors": [
+    "dinoki-ai"
+  ],
   "capabilities": {
     "tools": [
       {
@@ -38,6 +40,22 @@
           "size": 41141,
           "minisign": {
             "signature": "untrusted comment: signature from minisign secret key\nRWTBzaXEFjz7BP/VsuBexoRHxfD/myNPelNRYvBpKdVjfMQ6XCb4SBgBDKwDZ3B/NA7pgIWaS/v2c3+ogI7VKJ6uIcl0zF9BJQ0=\ntrusted comment: timestamp:1766666676\tfile:osaurus.messages-1.0.3.zip\ndnS+tBf8oU4xiTqHZLibdbRgj0vpBfge+f+bGQbirfR+ZD2kwsgcD2qpp0SM02TPHyzpXZx1h9nYrNP6fSsDBA=="
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.0.4",
+      "release_date": "2026-01-27",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-messages/releases/download/1.0.4/osaurus.messages-1.0.4-macos-arm64.zip",
+          "sha256": "33ff9e6d6ec6cfdc62563c43345717159108cce7496df1c2c5572b96c352c2ea",
+          "min_macos": "13.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBzaXEFjz7BD0LpG0RDxiTEuSSfsDl10LfBFoE9Y6e9Bg3dpVOfKNpts91LHo5dSQccjrLNKrvnPNpdZ2P2FnEnbcwLFzIhgA=\ntrusted comment: timestamp:1769504811\tfile:osaurus.messages-1.0.4-macos-arm64.zip\nCXiS5KzVmgwkYsL/9vxOSI8Nerjjhsah7tWR9woG73U9gXGEZw65cVc+sYhsIWeZwwhmdgEH+xqQTiljtLkJAg=="
           }
         }
       ]
