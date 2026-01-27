@@ -50,7 +50,7 @@ jobs:
       artifact_url: ${{ steps.urls.outputs.artifact_url }}
       artifact_name: ${{ steps.package.outputs.artifact }}
       sha256: ${{ steps.package.outputs.sha256 }}
-      signature: ${{ steps.sign.outputs.signature }}
+      signature_b64: ${{ steps.sign.outputs.signature_b64 }}
 
     steps:
       - name: Checkout code
@@ -168,13 +168,9 @@ jobs:
 
           echo "$MINISIGN_PASSWORD" | minisign -Sm "${{ steps.package.outputs.artifact }}" -s $RUNNER_TEMP/minisign.key
 
-          SIGNATURE=$(cat "${{ steps.package.outputs.artifact }}.minisig")
-
-          # Store signature using heredoc for multiline
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "signature<<$EOF" >> $GITHUB_OUTPUT
-          echo "$SIGNATURE" >> $GITHUB_OUTPUT
-          echo "$EOF" >> $GITHUB_OUTPUT
+          # Base64 encode signature for safe transport between jobs
+          SIGNATURE_B64=$(base64 -i "${{ steps.package.outputs.artifact }}.minisig")
+          echo "signature_b64=$SIGNATURE_B64" >> $GITHUB_OUTPUT
 
           rm -f $RUNNER_TEMP/minisign.key
 
@@ -201,8 +197,12 @@ jobs:
       - name: Generate registry manifest
         env:
           MANIFEST: ${{ needs.build.outputs.manifest }}
+          SIGNATURE_B64: ${{ needs.build.outputs.signature_b64 }}
         run: |
           PLUGIN_ID="${{ needs.build.outputs.plugin_id }}"
+
+          # Decode signature from base64
+          SIGNATURE=$(echo "$SIGNATURE_B64" | base64 -d)
 
           # Extract fields with defaults
           NAME=$(echo "$MANIFEST" | jq -r '.name // empty')
@@ -219,46 +219,46 @@ jobs:
             NAME="$(tr '[:lower:]' '[:upper:]' <<< ${NAME:0:1})${NAME:1}"
           fi
 
-          # Build registry JSON
-          cat > registry-manifest.json << EOF
-          {
-            "plugin_id": "$PLUGIN_ID",
-            "name": "$NAME",
-            "description": "$DESCRIPTION",
-            "homepage": "${{ github.server_url }}/${{ github.repository }}",
-            "license": "$LICENSE",
-            "authors": $AUTHORS,
-            "capabilities": {
-              "tools": $TOOLS
-            },
-            "public_keys": {
-              "minisign": "${{ secrets.MINISIGN_PUBLIC_KEY }}"
-            },
-            "requires": {
-              "min_macos": "$MIN_MACOS",
-              "osaurus_min_version": "$MIN_OSAURUS"
-            },
-            "versions": [
-              {
-                "version": "${{ needs.build.outputs.version }}",
-                "release_date": "$(date -u +%Y-%m-%d)",
-                "artifacts": [
-                  {
-                    "os": "macos",
-                    "arch": "arm64",
-                    "url": "${{ needs.build.outputs.artifact_url }}",
-                    "sha256": "${{ needs.build.outputs.sha256 }}",
-                    "min_macos": "$MIN_MACOS",
-                    "minisign": {
-                      "signature": "${{ needs.build.outputs.signature }}",
-                      "key_id": ""
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-          EOF
+          # Build registry JSON using jq for proper escaping
+          jq -n \
+            --arg plugin_id "$PLUGIN_ID" \
+            --arg name "$NAME" \
+            --arg description "$DESCRIPTION" \
+            --arg homepage "${{ github.server_url }}/${{ github.repository }}" \
+            --arg license "$LICENSE" \
+            --argjson authors "$AUTHORS" \
+            --argjson tools "$TOOLS" \
+            --arg minisign_pubkey "${{ secrets.MINISIGN_PUBLIC_KEY }}" \
+            --arg min_macos "$MIN_MACOS" \
+            --arg min_osaurus "$MIN_OSAURUS" \
+            --arg version "${{ needs.build.outputs.version }}" \
+            --arg release_date "$(date -u +%Y-%m-%d)" \
+            --arg url "${{ needs.build.outputs.artifact_url }}" \
+            --arg sha256 "${{ needs.build.outputs.sha256 }}" \
+            --arg signature "$SIGNATURE" \
+            '{
+              plugin_id: $plugin_id,
+              name: $name,
+              description: $description,
+              homepage: $homepage,
+              license: $license,
+              authors: $authors,
+              capabilities: { tools: $tools },
+              public_keys: { minisign: $minisign_pubkey },
+              requires: { min_macos: $min_macos, osaurus_min_version: $min_osaurus },
+              versions: [{
+                version: $version,
+                release_date: $release_date,
+                artifacts: [{
+                  os: "macos",
+                  arch: "arm64",
+                  url: $url,
+                  sha256: $sha256,
+                  min_macos: $min_macos,
+                  minisign: { signature: $signature }
+                }]
+              }]
+            }' > registry-manifest.json
 
           echo "Generated registry manifest:"
           cat registry-manifest.json | jq .
