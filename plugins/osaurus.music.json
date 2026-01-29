@@ -1,0 +1,185 @@
+{
+  "plugin_id": "osaurus.music",
+  "name": "Apple Music",
+  "description": "Control Apple Music playback, search your library, and get track information",
+  "homepage": "https://github.com/dinoki-ai/osaurus-music",
+  "license": "MIT",
+  "authors": [],
+  "capabilities": {
+    "tools": [
+      {
+        "id": "open_music",
+        "description": "Open Apple Music app",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "auto"
+      },
+      {
+        "id": "play",
+        "description": "Resume or start music playback",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "auto"
+      },
+      {
+        "id": "pause",
+        "description": "Pause music playback",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "auto"
+      },
+      {
+        "id": "next_track",
+        "description": "Skip to the next track",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "auto"
+      },
+      {
+        "id": "previous_track",
+        "description": "Go to the previous track",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "auto"
+      },
+      {
+        "id": "set_volume",
+        "description": "Set volume level (0-100)",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "level": {
+              "type": "integer",
+              "description": "Volume level from 0 to 100"
+            }
+          },
+          "required": [
+            "level"
+          ]
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "auto"
+      },
+      {
+        "id": "get_current_track",
+        "description": "Get currently playing track info",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "auto"
+      },
+      {
+        "id": "get_library_stats",
+        "description": "Get library statistics (track and playlist counts)",
+        "parameters": {
+          "type": "object",
+          "properties": {}
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "auto"
+      },
+      {
+        "id": "search_songs",
+        "description": "Search for songs in your library",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Max results (default: 10)"
+            }
+          },
+          "required": [
+            "query"
+          ]
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "auto"
+      },
+      {
+        "id": "play_song",
+        "description": "Search and play a specific song",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "song": {
+              "type": "string",
+              "description": "Song name to search and play"
+            }
+          },
+          "required": [
+            "song"
+          ]
+        },
+        "requirements": [
+          "automation"
+        ],
+        "permission_policy": "ask"
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWTmCafy0+6ViS/ZFdYN+4v3ATECbUamgj4WDgGz7R2/DD1UEHp1eXwt"
+  },
+  "requires": {
+    "min_macos": "15.0",
+    "osaurus_min_version": "0.5.0"
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2026-01-29",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-music/releases/download/1.0.0/osaurus.music-1.0.0-macos-arm64.zip",
+          "sha256": "1f89a96168ad412acfe5eab48b326432c283fa4a25821b50ab97474a1131d150",
+          "min_macos": "15.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6ViZ8jwe6I1jVkAlDasRk4l0f1Q2DyJOXwYysHFwNiHkRvF+6df+FbYRot5ceIm5xmkHqQTJhhBb+JeKDeeBhDVg0=\ntrusted comment: timestamp:1769728149\tfile:osaurus.music-1.0.0-macos-arm64.zip\nOdH8fmVHzPdjz7JMYni+u2Z/xHctp3npDCa2SbMXvQJL+T/uaEWBN/npBnvH3pYXNhiBk9NZFxaUT2XRD8KXBw=="
+          }
+        }
+      ]
+    }
+  ]
+}
