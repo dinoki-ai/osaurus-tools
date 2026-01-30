@@ -4,156 +4,48 @@
   "description": "Control Apple Music playback, search your library, and get track information",
   "homepage": "https://github.com/dinoki-ai/osaurus-music",
   "license": "MIT",
-  "authors": [],
+  "authors": ["dinoki-ai"],
   "capabilities": {
     "tools": [
       {
-        "id": "open_music",
-        "description": "Open Apple Music app",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "auto"
+        "name": "open_music",
+        "description": "Open Apple Music app"
       },
       {
-        "id": "play",
-        "description": "Resume or start music playback",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "auto"
+        "name": "play",
+        "description": "Resume or start music playback"
       },
       {
-        "id": "pause",
-        "description": "Pause music playback",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "auto"
+        "name": "pause",
+        "description": "Pause music playback"
       },
       {
-        "id": "next_track",
-        "description": "Skip to the next track",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "auto"
+        "name": "next_track",
+        "description": "Skip to the next track"
       },
       {
-        "id": "previous_track",
-        "description": "Go to the previous track",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "auto"
+        "name": "previous_track",
+        "description": "Go to the previous track"
       },
       {
-        "id": "set_volume",
-        "description": "Set volume level (0-100)",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "level": {
-              "type": "integer",
-              "description": "Volume level from 0 to 100"
-            }
-          },
-          "required": [
-            "level"
-          ]
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "auto"
+        "name": "set_volume",
+        "description": "Set volume level (0-100)"
       },
       {
-        "id": "get_current_track",
-        "description": "Get currently playing track info",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "auto"
+        "name": "get_current_track",
+        "description": "Get currently playing track info"
       },
       {
-        "id": "get_library_stats",
-        "description": "Get library statistics (track and playlist counts)",
-        "parameters": {
-          "type": "object",
-          "properties": {}
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "auto"
+        "name": "get_library_stats",
+        "description": "Get library statistics (track and playlist counts)"
       },
       {
-        "id": "search_songs",
-        "description": "Search for songs in your library",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "query": {
-              "type": "string",
-              "description": "Search query"
-            },
-            "limit": {
-              "type": "integer",
-              "description": "Max results (default: 10)"
-            }
-          },
-          "required": [
-            "query"
-          ]
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "auto"
+        "name": "search_songs",
+        "description": "Search for songs in your library"
       },
       {
-        "id": "play_song",
-        "description": "Search and play a specific song",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "song": {
-              "type": "string",
-              "description": "Song name to search and play"
-            }
-          },
-          "required": [
-            "song"
-          ]
-        },
-        "requirements": [
-          "automation"
-        ],
-        "permission_policy": "ask"
+        "name": "play_song",
+        "description": "Search and play a specific song"
       }
     ]
   },

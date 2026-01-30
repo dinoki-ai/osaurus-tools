@@ -208,7 +208,7 @@ jobs:
           AUTHORS=$(echo "$MANIFEST" | jq -c '.authors // ["${{ github.repository_owner }}"]')
           MIN_MACOS=$(echo "$MANIFEST" | jq -r '.min_macos // "13.0"')
           MIN_OSAURUS=$(echo "$MANIFEST" | jq -r '.min_osaurus // "0.5.0"')
-          TOOLS=$(echo "$MANIFEST" | jq -c '.capabilities.tools // []')
+          TOOLS=$(echo "$MANIFEST" | jq -c '[.capabilities.tools // [] | .[] | {name: .id, description: .description}]')
 
           if [ -z "$NAME" ]; then
             NAME=$(echo "$PLUGIN_ID" | rev | cut -d. -f1 | rev)
