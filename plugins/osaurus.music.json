@@ -42,6 +42,10 @@
         "description": "Get library statistics (track and playlist counts)"
       },
       {
+        "name": "list_playlists",
+        "description": "List available playlists in the user's library"
+      },
+      {
         "name": "search_songs",
         "description": "Search for songs in your library"
       },
@@ -107,6 +111,22 @@
           "min_macos": "15.0",
           "minisign": {
             "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6ViZa8Rcyb68FBtKOhcK+kHRlkvwCAZP7tEyAn1UK/GMHWy75azNu1e9W2bdGW1LIDCXFXo3g6GcmPUqs5Koym0g8=\ntrusted comment: timestamp:1769780289\tfile:osaurus.music-1.0.2-macos-arm64.zip\nU19XiNnyP1reQe+yrAV+AnnjVpiRHD6M8ONmG3OgmI2SOGZ12cAtrsVyuLbMEzAJESbwch9pVc5JB3Og/n1gAw=="
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.0.3",
+      "release_date": "2026-01-30",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-music/releases/download/1.0.3/osaurus.music-1.0.3-macos-arm64.zip",
+          "sha256": "1101b899040fd7932a241404c52b534a9b0d9739ebb896b6e2925510c5fc5e3c",
+          "min_macos": "15.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6ViRGJM4iDQYy9vx4QOVtV7DXN0T1jIf717lPaRVutjeKBjiY7GRoeMLn0UzeL3zDMaMBO9kKuUgmQcMzV7939egw=\ntrusted comment: timestamp:1769780890\tfile:osaurus.music-1.0.3-macos-arm64.zip\nlGwYYBfbFpAKRBkEUBKrvNiOtwJB0BuuETqZwaVG6zukQGnI3dAMNG/rmvQVUwBw+sj4Cy8cHJTkmIDn4wvCCw=="
           }
         }
       ]
