@@ -57,33 +57,17 @@
   },
   "versions": [
     {
-      "version": "1.1.0",
-      "release_date": "2026-01-01",
+      "version": "1.0.0",
+      "release_date": "2025-11-25",
       "artifacts": [
         {
           "os": "macos",
           "arch": "arm64",
-          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.1.0/osaurus.browser-1.1.0.zip",
-          "sha256": "d66addfabd384c6b2d26738c100de4032d74b0ddd8a83429e9cb5487b46a05eb",
-          "size": 84678,
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.0.0/osaurus.browser-1.0.0.zip",
+          "sha256": "888e3599bbc7b6e0264f9e5d798ecb173f3a0340a2c0f034715362992acc0b6a",
+          "size": 60168,
           "minisign": {
-            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwOwodP8mHiM0g3GpLI5GblsOnV0wnCrVVQUFozOqdXCQEFTeS0G2NSxmAgIn2W4DADG17STjjnvrQE7JIwh7OQ4=\ntrusted comment: timestamp:1767309858\tfile:osaurus.browser-1.1.0.zip\n6m4jqd7Xf8m9FUI9a/O3J7gdfiT5hr9+CrH8Zc54UgPzW9lQJCkl3T6t0gSD2X1JHyUBRwW6B5ohYiSwA1vhAw=="
-          }
-        }
-      ]
-    },
-    {
-      "version": "1.0.2",
-      "release_date": "2025-11-30",
-      "artifacts": [
-        {
-          "os": "macos",
-          "arch": "arm64",
-          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.0.2/osaurus.browser-1.0.2.zip",
-          "sha256": "848778421c0a12c57a33cba2ebef0e691aa7d943063d40097b1afb4fc7193adf",
-          "size": 66161,
-          "minisign": {
-            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwBWXO+Mnyj1WvI+exZpBrDqY9niG0Sx6dyWHhs+xdm2+mxIIAYY5nChnM0a6yxwVSaq5Hlq59/uSCQdmmJ2zNwM=\ntrusted comment: timestamp:1764507393\tfile:osaurus.browser-1.0.2.zip\n4cKKGtQbUHs1Py0jfvvfKCzT4OErz/67XGOLOFkp/WhVOjwhYmrfRYabOgOaubw2RjLe6uVDdJgK44rA+QoTCw=="
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwMDAGQN7bWNSWdLeQS2Kd4HluHLJWC4bXY0pJ0MtZqUsg9QlL8415vzjR2022v8Tc14EKAT3MEVhTYnwnDX2TgQ=\ntrusted comment: timestamp:1764090572\tfile:osaurus.browser-1.0.0.zip\n/g/vlpQJdToauY0NamNtWexPD6aI+OG5jCCPAufiXJXvJpRHX7FJz4OQ67+loS6OxlvTuW3GinRFDwMYM7tICg=="
           }
         }
       ]
@@ -105,17 +89,50 @@
       ]
     },
     {
-      "version": "1.0.0",
-      "release_date": "2025-11-25",
+      "version": "1.0.2",
+      "release_date": "2025-11-30",
       "artifacts": [
         {
           "os": "macos",
           "arch": "arm64",
-          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.0.0/osaurus.browser-1.0.0.zip",
-          "sha256": "888e3599bbc7b6e0264f9e5d798ecb173f3a0340a2c0f034715362992acc0b6a",
-          "size": 60168,
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.0.2/osaurus.browser-1.0.2.zip",
+          "sha256": "848778421c0a12c57a33cba2ebef0e691aa7d943063d40097b1afb4fc7193adf",
+          "size": 66161,
           "minisign": {
-            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwMDAGQN7bWNSWdLeQS2Kd4HluHLJWC4bXY0pJ0MtZqUsg9QlL8415vzjR2022v8Tc14EKAT3MEVhTYnwnDX2TgQ=\ntrusted comment: timestamp:1764090572\tfile:osaurus.browser-1.0.0.zip\n/g/vlpQJdToauY0NamNtWexPD6aI+OG5jCCPAufiXJXvJpRHX7FJz4OQ67+loS6OxlvTuW3GinRFDwMYM7tICg=="
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwBWXO+Mnyj1WvI+exZpBrDqY9niG0Sx6dyWHhs+xdm2+mxIIAYY5nChnM0a6yxwVSaq5Hlq59/uSCQdmmJ2zNwM=\ntrusted comment: timestamp:1764507393\tfile:osaurus.browser-1.0.2.zip\n4cKKGtQbUHs1Py0jfvvfKCzT4OErz/67XGOLOFkp/WhVOjwhYmrfRYabOgOaubw2RjLe6uVDdJgK44rA+QoTCw=="
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.1.0",
+      "release_date": "2026-01-01",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.1.0/osaurus.browser-1.1.0.zip",
+          "sha256": "d66addfabd384c6b2d26738c100de4032d74b0ddd8a83429e9cb5487b46a05eb",
+          "size": 84678,
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwOwodP8mHiM0g3GpLI5GblsOnV0wnCrVVQUFozOqdXCQEFTeS0G2NSxmAgIn2W4DADG17STjjnvrQE7JIwh7OQ4=\ntrusted comment: timestamp:1767309858\tfile:osaurus.browser-1.1.0.zip\n6m4jqd7Xf8m9FUI9a/O3J7gdfiT5hr9+CrH8Zc54UgPzW9lQJCkl3T6t0gSD2X1JHyUBRwW6B5ohYiSwA1vhAw=="
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.1.1",
+      "release_date": "2026-01-30",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.1.1/osaurus.browser-1.1.1-macos-arm64.zip",
+          "sha256": "29a0fabffa0b75eff7d5539b3f24b438e9f465871325b34f84f6571649ada14e",
+          "size": 89187,
+          "min_macos": "13.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwCldpLRLhKt/5dtyQbmLqzEhHd9rAPOrT8aaiVjoykk2Br+9KkhWc855yjKeTi4OEYuISvFRnwKQm92AnCKpLwA=\ntrusted comment: timestamp:1769775680\tfile:osaurus.browser-1.1.1-macos-arm64.zip\nBAExAifFvO9/1GcS/PtvaTHIlnvt5K9Gn0Le3s68v7mNyNx6GFDWBzSKFPyBaFprb/AVBxcoypFmlqkt94UDCg=="
           }
         }
       ]
