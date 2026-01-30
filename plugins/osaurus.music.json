@@ -180,6 +180,22 @@
           }
         }
       ]
+    },
+    {
+      "version": "1.0.1",
+      "release_date": "2026-01-30",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-music/releases/download/1.0.1/osaurus.music-1.0.1-macos-arm64.zip",
+          "sha256": "c46be21142324f11d6fd87c25df96082f87a36e13daca6dd9b99dc08a0e90d05",
+          "min_macos": "13.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6VifsSfm5YgvH63KbYBfrloG2lvEpEgneyxtdJ3QVWy92E8aE4xGNPwTPE+djWjf2BxG+muXyYFsp+W3IaSsoeqAA=\ntrusted comment: timestamp:1769773855\tfile:osaurus.music-1.0.1-macos-arm64.zip\nzEY5bFCXa59ptgnb/FEkTdFBniFZDFmGwNiSfG+WpP3AQcCSghA6VQ9Sz0KIEj34efmIK+47W5JL0RcL1TP3AQ=="
+          }
+        }
+      ]
     }
   ]
 }
