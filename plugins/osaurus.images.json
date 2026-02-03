@@ -1,0 +1,97 @@
+{
+  "plugin_id": "osaurus.images",
+  "name": "Osaurus Images",
+  "description": "Image manipulation, conversion, and optimization tools",
+  "homepage": "https://github.com/dinoki-ai/osaurus-images",
+  "license": "MIT",
+  "authors": [],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "convert_image",
+        "description": "Convert image format (png, jpeg, gif, tiff, bmp, heic, webp)"
+      },
+      {
+        "name": "optimize_image",
+        "description": "Optimize image file size"
+      },
+      {
+        "name": "rotate_image",
+        "description": "Rotate image by degrees"
+      },
+      {
+        "name": "flip_image",
+        "description": "Flip image horizontally or vertically"
+      },
+      {
+        "name": "crop_image",
+        "description": "Crop image to region"
+      },
+      {
+        "name": "resize_image",
+        "description": "Resize image"
+      },
+      {
+        "name": "get_image_info",
+        "description": "Get image metadata"
+      },
+      {
+        "name": "strip_metadata",
+        "description": "Remove EXIF metadata"
+      },
+      {
+        "name": "adjust_colors",
+        "description": "Adjust brightness/contrast/saturation"
+      },
+      {
+        "name": "apply_filter",
+        "description": "Apply filter (grayscale, sepia, blur, sharpen, invert)"
+      },
+      {
+        "name": "extract_colors",
+        "description": "Extract dominant colors"
+      },
+      {
+        "name": "add_watermark",
+        "description": "Add text or image watermark"
+      },
+      {
+        "name": "composite_images",
+        "description": "Overlay image on another"
+      },
+      {
+        "name": "add_border",
+        "description": "Add colored border"
+      },
+      {
+        "name": "round_corners",
+        "description": "Round image corners (outputs PNG)"
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWTmCafy0+6ViS/ZFdYN+4v3ATECbUamgj4WDgGz7R2/DD1UEHp1eXwt"
+  },
+  "requires": {
+    "min_macos": "15.0",
+    "osaurus_min_version": "0.5.0"
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2026-02-03",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-images/releases/download/1.0.0/osaurus.images-1.0.0-macos-arm64.zip",
+          "sha256": "cc4ac868b7425bbf0d764a1d1f2634c9ca314b1c502b5612e172ffa263e07942",
+          "min_macos": "15.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6ViUpY/tUfWNoZGaS2XQ2qT3CcnnyFCBObvba1wd0bzqx9f5Ru/nIhxxXt4MDAeQ6T3PJ4bgA2wEsZdp1u3oje3Q4=\ntrusted comment: timestamp:1770121204\tfile:osaurus.images-1.0.0-macos-arm64.zip\n2hkD4+e/B9cWx6dbcg1xgf0MPjrSuDalcYvvJOw4VMa1UbvI3iJi/JsGigUzDOC40VlT8CH+zu3Xgk+0AByEDg=="
+          }
+        }
+      ]
+    }
+  ]
+}
