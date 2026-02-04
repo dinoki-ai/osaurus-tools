@@ -359,6 +359,14 @@ jobs:
           fail_on_unmatched_files: false
           generate_release_notes: false
 
+      - name: Post to Discord
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          PLUGIN_ID: ${{ needs.build.outputs.plugin_id }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: bash scripts/discord_notify.sh
+
   update-registry:
     needs: [build, release]
     runs-on: ubuntu-latest
