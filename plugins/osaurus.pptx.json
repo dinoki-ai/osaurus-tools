@@ -1,0 +1,85 @@
+{
+  "plugin_id": "osaurus.pptx",
+  "name": "Osaurus PPTX",
+  "description": "Create, modify, and export PowerPoint presentations. Supports text, images, shapes, tables, charts, themes, and more.",
+  "homepage": "https://github.com/dinoki-ai/osaurus-pptx",
+  "license": "MIT",
+  "authors": [],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "create_presentation",
+        "description": "Create a new PowerPoint presentation. Returns a presentation_id to use with other tools."
+      },
+      {
+        "name": "add_slide",
+        "description": "Add a new slide to a presentation. The layout parameter is metadata only — you must add elements (text, images, shapes, etc.) manually using add_text, add_image, and other tools."
+      },
+      {
+        "name": "add_text",
+        "description": "Add a text box to a slide with rich formatting options."
+      },
+      {
+        "name": "add_image",
+        "description": "Add an image to a slide from a file in the workspace. Supports PNG, JPG, GIF, SVG, BMP, TIFF."
+      },
+      {
+        "name": "add_shape",
+        "description": "Add a geometric shape to a slide. 21 shape types available including rectangles, arrows, stars, and more."
+      },
+      {
+        "name": "add_table",
+        "description": "Add a data table to a slide with header styling, alternating row colors, and optional cell merging."
+      },
+      {
+        "name": "add_chart",
+        "description": "Add a chart to a slide. Supports bar, column, line, pie, and doughnut chart types."
+      },
+      {
+        "name": "set_slide_background",
+        "description": "Set a slide's background to a solid color or gradient."
+      },
+      {
+        "name": "delete_slide",
+        "description": "Remove a slide from a presentation by its number."
+      },
+      {
+        "name": "read_presentation",
+        "description": "Read an existing PPTX file into memory for viewing or modification. Returns a presentation_id."
+      },
+      {
+        "name": "get_presentation_info",
+        "description": "Get metadata and content summary for a presentation. Use include_details=true for full element details."
+      },
+      {
+        "name": "save_presentation",
+        "description": "Save a presentation as a .pptx file to the workspace."
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWTmCafy0+6ViS/ZFdYN+4v3ATECbUamgj4WDgGz7R2/DD1UEHp1eXwt"
+  },
+  "requires": {
+    "min_macos": "15.0",
+    "osaurus_min_version": "0.5.0"
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2026-02-07",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-pptx/releases/download/1.0.0/osaurus.pptx-1.0.0-macos-arm64.zip",
+          "sha256": "d7554c038203e496533ebe7565e7e2758d7d9eccb1f62f2490631c71891fd0cf",
+          "min_macos": "15.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6Vidy33YLCTSwNxp0/9pG/G3Q4E3lwLpLzZTSOgr85kQ+SohthDbCbheIOSt0+Ey4n3fwwi3OWRsptupob6oOZQg8=\ntrusted comment: timestamp:1770508341\tfile:osaurus.pptx-1.0.0-macos-arm64.zip\naxR5IXqaXJptz4PICmjPZ1DY5g0CNSSxoma+kuSV8mv9aJwZaZvj85hJrGtQscNzrRnthF3akY8sJ4L7F+rpBA=="
+          }
+        }
+      ]
+    }
+  ]
+}
