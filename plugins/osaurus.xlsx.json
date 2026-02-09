@@ -43,6 +43,12 @@
         "name": "modify_xlsx",
         "description": "Apply batch modifications to a workbook in memory. Supports setting cells, formulas, deleting rows/columns, renaming sheets, and adding sheets. Use save_xlsx afterwards to persist."
       }
+    ],
+    "skills": [
+      {
+        "name": "osaurus-xlsx",
+        "description": "Read, create, and modify Excel (.xlsx) spreadsheets using the Osaurus XLSX plugin. Use when working with .xlsx files, converting between CSV and Excel, or performing batch spreadsheet operations."
+      }
     ]
   },
   "public_keys": {
@@ -81,6 +87,22 @@
           "min_macos": "15.0",
           "minisign": {
             "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6VicKCD6KiTbxAmJ9nvHI73iW0hzKlOJrDgq+Gx28mw94fxf8mCQIeDe0KTtPFXu0Bh2emCwWMzA6ztONjvjvE2w0=\ntrusted comment: timestamp:1770643738\tfile:osaurus.xlsx-1.0.1-macos-arm64.zip\nmaYDR+gm9O8LibfFbE5TaBrjMYS1PcSSDOqWPKMTXR2wv1hlK62hGhB4BsssMDb5AsAXbdLf0jGJuUAo0rWpBg=="
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.0.2",
+      "release_date": "2026-02-09",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-xlsx/releases/download/1.0.2/osaurus.xlsx-1.0.2-macos-arm64.zip",
+          "sha256": "802f3eef4f54a6280280ea6474d4b02de0263d1d6de84fab223fd6d7688c7d03",
+          "min_macos": "15.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6VififbLJn+rk1sRWpB56WQxlWxrX1DN3I0fJCeUb4nrrIu/xiSLqyOuUtTU3AsgpiSc4kD8xCMGbv3FsHBJDdyAY=\ntrusted comment: timestamp:1770644957\tfile:osaurus.xlsx-1.0.2-macos-arm64.zip\nolJ5pZmzc1E8vdo4vx3qRogQGScGSoGQXTwL7+hlxMA/b9grfXUNOujTvVfNCtTd9BeCniSJfFEU0wYGGwEvAA=="
           }
         }
       ]
