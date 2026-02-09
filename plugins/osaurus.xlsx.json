@@ -1,0 +1,73 @@
+{
+  "plugin_id": "osaurus.xlsx",
+  "name": "Osaurus XLSX",
+  "description": "Read, create, and modify Excel spreadsheet (.xlsx) files. Supports reading cell data, creating workbooks with multiple sheets, writing cells, formulas, CSV/TSV conversion, and batch modifications.",
+  "homepage": "https://github.com/dinoki-ai/osaurus-xlsx",
+  "license": "MIT",
+  "authors": [],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "read_xlsx",
+        "description": "Read an Excel (.xlsx) file and load it into memory. Returns structured cell data for all or a specific sheet. Use the returned workbook_id to reference this workbook in subsequent tool calls."
+      },
+      {
+        "name": "get_cell_value",
+        "description": "Get the value of a specific cell or range from an already-loaded workbook. Use read_xlsx first to load the workbook."
+      },
+      {
+        "name": "list_sheets",
+        "description": "List all sheet names in an Excel (.xlsx) file without reading all cell data."
+      },
+      {
+        "name": "create_xlsx",
+        "description": "Create a new workbook in memory with one or more sheets. Each sheet can have optional headers and rows of data. Values are auto-detected as numbers, booleans, or strings. Use save_xlsx to write the workbook to disk."
+      },
+      {
+        "name": "write_cells",
+        "description": "Write or update specific cells in a workbook that is already loaded in memory. If the sheet does not exist, it will be created. Use save_xlsx afterwards to persist changes to disk."
+      },
+      {
+        "name": "save_xlsx",
+        "description": "Save a workbook from memory to an .xlsx file on disk. The .xlsx extension is added automatically if missing."
+      },
+      {
+        "name": "xlsx_to_csv",
+        "description": "Convert a sheet from an Excel (.xlsx) file to CSV or TSV text. Reads directly from disk."
+      },
+      {
+        "name": "csv_to_xlsx",
+        "description": "Import CSV or TSV text data into a new workbook in memory. Use save_xlsx to write to disk afterwards."
+      },
+      {
+        "name": "modify_xlsx",
+        "description": "Apply batch modifications to a workbook in memory. Supports setting cells, formulas, deleting rows/columns, renaming sheets, and adding sheets. Use save_xlsx afterwards to persist."
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWTmCafy0+6ViS/ZFdYN+4v3ATECbUamgj4WDgGz7R2/DD1UEHp1eXwt"
+  },
+  "requires": {
+    "min_macos": "15.0",
+    "osaurus_min_version": "0.5.0"
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2026-02-09",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-xlsx/releases/download/1.0.0/osaurus.xlsx-1.0.0-macos-arm64.zip",
+          "sha256": "a5dfd44901674591c6c451e0e42157a9abbc152dcf3e77ce9b28786db986dbb7",
+          "min_macos": "15.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6ViSYuEiwuIGZCpHNxSqK+TbEX0nrFbg87yz0AjpXHOyVTq+nj0htpFfiAW2SgvKX8I4gENHOstdBFoneODBvv0QE=\ntrusted comment: timestamp:1770642270\tfile:osaurus.xlsx-1.0.0-macos-arm64.zip\n4Yu/4xGf5/+GpSQwiN9jyX5JdUwddhrTxCsu6M3TWPhW4CkbC6EsuR19o6I0e+AnBZfPI12Ya+iJuoPwULpaBQ=="
+          }
+        }
+      ]
+    }
+  ]
+}
