@@ -6,7 +6,7 @@ name: Build Plugin (Reusable)
 # External plugin repositories call this workflow to:
 # 1. Build their Swift plugin as a dylib
 # 2. Auto-detect the dylib and extract manifest (plugin_id, name, etc.)
-# 3. Package and sign the artifact
+# 3. Package and sign the artifact (includes SKILL.md for compound plugins)
 # 4. Create a GitHub Release
 # 5. Submit a PR to the osaurus-tools registry
 #
@@ -108,6 +108,25 @@ jobs:
           echo "plugin_id=$PLUGIN_ID" >> $GITHUB_OUTPUT
           echo "Extracted plugin_id: $PLUGIN_ID"
 
+      - name: Detect skills
+        id: skills
+        run: |
+          # Check for SKILL.md at repo root (compound plugin support)
+          if [ -f "SKILL.md" ]; then
+            # Extract name and description from YAML frontmatter
+            FRONTMATTER=$(sed -n '/^---$/,/^---$/p' SKILL.md | sed '1d;$d')
+            SKILL_NAME=$(echo "$FRONTMATTER" | grep '^name:' | head -1 | sed 's/^name:[[:space:]]*//')
+            SKILL_DESC=$(echo "$FRONTMATTER" | grep '^description:' | head -1 | sed 's/^description:[[:space:]]*//')
+
+            jq -n --arg name "$SKILL_NAME" --arg desc "$SKILL_DESC" \
+              '[{name: $name, description: $desc}]' > build-data/skills.json
+            echo "has_skills=true" >> $GITHUB_OUTPUT
+            echo "Found SKILL.md: name=$SKILL_NAME"
+          else
+            echo "[]" > build-data/skills.json
+            echo "has_skills=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Code sign
         env:
           DEVELOPER_ID_CERTIFICATE_P12_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12_BASE64 }}
@@ -140,6 +159,12 @@ jobs:
           ARTIFACT="${PLUGIN_ID}-${VERSION}-macos-arm64.zip"
 
           zip -j "$ARTIFACT" "${{ steps.find.outputs.dylib }}"
+
+          # Include SKILL.md if present (compound plugin support)
+          if [ -f "SKILL.md" ]; then
+            zip -j "$ARTIFACT" "SKILL.md"
+            echo "Included SKILL.md in artifact"
+          fi
 
           echo "sha256=$(shasum -a 256 "$ARTIFACT" | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
           echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
@@ -210,9 +235,22 @@ jobs:
           MIN_OSAURUS=$(echo "$MANIFEST" | jq -r '.min_osaurus // "0.5.0"')
           TOOLS=$(echo "$MANIFEST" | jq -c '[.capabilities.tools // [] | .[] | {name: .id, description: .description}]')
 
+          # Read skills metadata (from SKILL.md detection)
+          SKILLS="[]"
+          if [ -f "build-data/skills.json" ]; then
+            SKILLS=$(cat build-data/skills.json)
+          fi
+
           if [ -z "$NAME" ]; then
             NAME=$(echo "$PLUGIN_ID" | rev | cut -d. -f1 | rev)
             NAME="$(tr '[:lower:]' '[:upper:]' <<< ${NAME:0:1})${NAME:1}"
+          fi
+
+          # Build capabilities object (include skills only if present)
+          if [ "$SKILLS" = "[]" ]; then
+            CAPABILITIES=$(jq -n --argjson tools "$TOOLS" '{ tools: $tools }')
+          else
+            CAPABILITIES=$(jq -n --argjson tools "$TOOLS" --argjson skills "$SKILLS" '{ tools: $tools, skills: $skills }')
           fi
 
           jq -n \
@@ -222,7 +260,7 @@ jobs:
             --arg homepage "${{ github.server_url }}/${{ github.repository }}" \
             --arg license "$LICENSE" \
             --argjson authors "$AUTHORS" \
-            --argjson tools "$TOOLS" \
+            --argjson capabilities "$CAPABILITIES" \
             --arg minisign_pubkey "$MINISIGN_PUBLIC_KEY" \
             --arg min_macos "$MIN_MACOS" \
             --arg min_osaurus "$MIN_OSAURUS" \
@@ -238,7 +276,7 @@ jobs:
               homepage: $homepage,
               license: $license,
               authors: $authors,
-              capabilities: { tools: $tools },
+              capabilities: $capabilities,
               public_keys: { minisign: $minisign_pubkey },
               requires: { min_macos: $min_macos, osaurus_min_version: $min_osaurus },
               versions: [{
@@ -292,9 +330,9 @@ jobs:
           mkdir -p plugins
 
           if [ -f "$MANIFEST_PATH" ]; then
-            # Update tools from manifest and prepend new version to versions array
+            # Update tools and skills from manifest and prepend new version to versions array
             jq --slurpfile new "$GITHUB_WORKSPACE/registry-manifest.json" \
-              '.capabilities.tools = $new[0].capabilities.tools | .versions = [$new[0].versions[0]] + .versions | .versions |= unique_by(.version)' \
+              '.capabilities.tools = $new[0].capabilities.tools | .capabilities.skills = $new[0].capabilities.skills | .versions = [$new[0].versions[0]] + .versions | .versions |= unique_by(.version)' \
               "$MANIFEST_PATH" > tmp.json && mv tmp.json "$MANIFEST_PATH"
           else
             cp "$GITHUB_WORKSPACE/registry-manifest.json" "$MANIFEST_PATH"
