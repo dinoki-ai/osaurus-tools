@@ -68,6 +68,22 @@
           }
         }
       ]
+    },
+    {
+      "version": "1.0.1",
+      "release_date": "2026-02-09",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-xlsx/releases/download/1.0.1/osaurus.xlsx-1.0.1-macos-arm64.zip",
+          "sha256": "806bf0f0e6b2a72eda3ba216abdfcee962d49dde01fe63ffae7970ca1b7bf23c",
+          "min_macos": "15.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6VicKCD6KiTbxAmJ9nvHI73iW0hzKlOJrDgq+Gx28mw94fxf8mCQIeDe0KTtPFXu0Bh2emCwWMzA6ztONjvjvE2w0=\ntrusted comment: timestamp:1770643738\tfile:osaurus.xlsx-1.0.1-macos-arm64.zip\nmaYDR+gm9O8LibfFbE5TaBrjMYS1PcSSDOqWPKMTXR2wv1hlK62hGhB4BsssMDb5AsAXbdLf0jGJuUAo0rWpBg=="
+          }
+        }
+      ]
     }
   ]
 }
