@@ -80,6 +80,22 @@
           }
         }
       ]
+    },
+    {
+      "version": "1.0.1",
+      "release_date": "2026-02-09",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-pptx/releases/download/1.0.1/osaurus.pptx-1.0.1-macos-arm64.zip",
+          "sha256": "93a11ff92eb5981882be78dd30a4ae37af2ca850b3f83ef402fb14c231e27d4e",
+          "min_macos": "15.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6ViWzAzbIwQZw56JWBXc16YY8gNuG7TjHWQsON9O7RF099FarvaDCpDO4RQBZ8x8YRGbxbh7WwUASMEGET8H4bFgg=\ntrusted comment: timestamp:1770643724\tfile:osaurus.pptx-1.0.1-macos-arm64.zip\nsiIPoHS/UYNF7YnKF1LIsdbn6BMMyvmsLYTBOiVdFbrgUZaqSf9SB8TZ+5wCwF6E+MpyJn/uYmqUGShLinz+Bw=="
+          }
+        }
+      ]
     }
   ]
 }
