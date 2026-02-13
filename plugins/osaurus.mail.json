@@ -1,0 +1,79 @@
+{
+  "plugin_id": "osaurus.mail",
+  "name": "Osaurus Mail",
+  "description": "Read, search, compose, and manage Apple Mail — locally and privately",
+  "homepage": "https://github.com/dinoki-ai/osaurus-mail",
+  "license": "MIT",
+  "authors": [],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "list_mailboxes",
+        "description": "List all mailboxes in Apple Mail. Returns a flat list of mailbox_path identifiers (e.g. 'iCloud/INBOX', 'Gmail/[Gmail]/All Mail') that are used as the mailbox_path parameter in other tools. Call this first to discover available mailboxes."
+      },
+      {
+        "name": "list_messages",
+        "description": "List message summaries in a mailbox. Returns subject, sender, date, and flags — but NOT the message body. Use read_message to get the body of a specific message. Supports filtering and pagination via offset. Messages are returned newest-first."
+      },
+      {
+        "name": "read_message",
+        "description": "Read the full content of a specific email message. Use this after list_messages or search_messages to get the message body. Returns plain text body by default."
+      },
+      {
+        "name": "search_messages",
+        "description": "Search for messages by keyword across subject, sender, and body text. Returns the same message summary format as list_messages (no body — use read_message for that). Use this instead of list_messages when you need to find messages by content rather than browsing a specific mailbox."
+      },
+      {
+        "name": "compose_message",
+        "description": "Compose a new email. By default opens as a draft for the user to review (send: false). Set send: true to send immediately. Provide either body (plain text) or html_body (rich HTML) or both — if both are provided, html_body is used. At least one of body or html_body is required."
+      },
+      {
+        "name": "reply_to_message",
+        "description": "Reply to an existing email. By default opens as a draft for user review. The original message is quoted automatically by Mail. Provide either body or html_body for the reply content. At least one of body or html_body is required."
+      },
+      {
+        "name": "move_message",
+        "description": "Move a message to a different mailbox. Use list_mailboxes to get valid destination mailbox_path values. The destination must be in the same account as the message."
+      },
+      {
+        "name": "set_message_status",
+        "description": "Update the read, flagged, or junk status of a message. Only the provided fields are changed — omitted fields are left as-is."
+      },
+      {
+        "name": "get_thread",
+        "description": "Get all messages in a conversation thread, ordered chronologically (oldest first). Provide any message_id from the thread. Returns summaries by default — set include_bodies to true to include message bodies. Thread detection is based on subject matching and In-Reply-To/References headers (best-effort)."
+      }
+    ],
+    "skills": [
+      {
+        "name": "osaurus-mail",
+        "description": "Read, search, compose, and manage Apple Mail emails using the Osaurus Mail plugin. Use when the user asks to check email, read messages, send replies, search their inbox, triage mail, summarize threads, or manage mailboxes."
+      }
+    ]
+  },
+  "public_keys": {
+    "minisign": "RWTmCafy0+6ViS/ZFdYN+4v3ATECbUamgj4WDgGz7R2/DD1UEHp1eXwt"
+  },
+  "requires": {
+    "min_macos": "15.0",
+    "osaurus_min_version": "0.5.0"
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "release_date": "2026-02-13",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-mail/releases/download/1.0.0/osaurus.mail-1.0.0-macos-arm64.zip",
+          "sha256": "3949aa36c1675b9e2cd9d461a7e475b301a05f2dc9a7d7ef95b720f3735eaf09",
+          "min_macos": "15.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTmCafy0+6ViagAGrIKvdAiD3JxOAbO+iW6XxQ93Lw0iDRYDJmsnoEFVq9fM6cHdgx4Q53q/BI6KlElmxXcX74pGO7RrEnXEQ0=\ntrusted comment: timestamp:1771005481\tfile:osaurus.mail-1.0.0-macos-arm64.zip\nfF6GhJ9pA6tedPD+ISQaNeg5Ogl/cJtX1JvSQEIt1Rk746i5l+n3941xgaaArunIYk3bd/PHC+SEtp4D1nrVCg=="
+          }
+        }
+      ]
+    }
+  ]
+}
