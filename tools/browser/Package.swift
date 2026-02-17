@@ -15,6 +15,12 @@ let package = Package(
                 .linkedFramework("WebKit"),
                 .linkedFramework("AppKit"),
             ]
-        )
+        ),
+        .testTarget(
+            name: "OsaurusBrowserTests",
+            dependencies: ["OsaurusBrowser"],
+            path: "Tests/OsaurusBrowserTests",
+            resources: [.copy("Fixtures")]
+        ),
     ]
 )

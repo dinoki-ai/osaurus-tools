@@ -2,10 +2,19 @@ import AppKit
 import Foundation
 import WebKit
 
+// MARK: - Detail Level
+
+enum DetailLevel: String {
+    case none = "none"
+    case compact = "compact"
+    case standard = "standard"
+    case full = "full"
+}
+
 // MARK: - Headless Browser Manager
 
 /// Manages a headless WKWebView instance for browser automation
-private class HeadlessBrowser: NSObject, WKNavigationDelegate {
+class HeadlessBrowser: NSObject, WKNavigationDelegate {
     private var webView: WKWebView!
     private var navigationSemaphore = DispatchSemaphore(value: 0)
     private var navigationError: Error?
@@ -108,7 +117,7 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
         return (true, nil)
     }
 
-    private func waitForNetworkIdle(timeout: TimeInterval) {
+    func waitForNetworkIdle(timeout: TimeInterval) {
         // Simple implementation: wait a bit for dynamic content
         Thread.sleep(forTimeInterval: 0.5)
 
@@ -132,7 +141,7 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
         }
     }
 
-    private func waitForDOMStable(timeout: TimeInterval) {
+    func waitForDOMStable(timeout: TimeInterval) {
         // Poll-based approach: Check DOM stability by comparing snapshots
         // First, wait for document.readyState to be complete
         let readyScript = """
@@ -223,7 +232,7 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
         var visibleOnly: Bool = true
     }
 
-    func takeSnapshot(options: SnapshotOptions = SnapshotOptions()) -> String {
+    func takeSnapshot(options: SnapshotOptions = SnapshotOptions(), detail: DetailLevel = .standard) -> String {
         // Validate state before attempting snapshot
         guard hasNavigated else {
             return "Error: No page loaded. Call browser_navigate first to load a page."
@@ -459,7 +468,8 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
                         elementCount: results.length,
                         hasMore: hasMore,
                         elements: results,
-                        generation: \(currentGeneration)
+                        generation: \(currentGeneration),
+                        bodyText: (function() { try { return (document.body.innerText || '').substring(0, 500); } catch(e) { return ''; } })()
                     };
                 } catch (e) {
                     return {error: 'Snapshot failed: ' + (e.message || String(e)) + '. Try calling browser_navigate to reload the page.'};
@@ -482,72 +492,7 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
             return "Error: Failed to parse snapshot"
         }
 
-        return formatSnapshot(data)
-    }
-
-    private func formatSnapshot(_ data: [String: Any]) -> String {
-        var output = ""
-
-        // Header
-        let title = data["title"] as? String ?? ""
-        let url = data["url"] as? String ?? ""
-        let hasMore = data["hasMore"] as? Bool ?? false
-
-        output += "- page: \(title)\n"
-        output += "- url: \(url)\n\n"
-
-        // Elements
-        guard let elements = data["elements"] as? [[String: Any]] else {
-            return output + "(no interactive elements found)"
-        }
-
-        for element in elements {
-            let ref = element["ref"] as? String ?? ""
-            let type = element["type"] as? String ?? ""
-            let text = element["text"] as? String ?? ""
-
-            var line = "[\(ref)] \(type)"
-
-            if !text.isEmpty {
-                line += " \"\(text)\""
-            }
-
-            // Add key attributes inline
-            var attrs: [String] = []
-            if let name = element["name"] as? String, !name.isEmpty {
-                attrs.append("name=\"\(name)\"")
-            }
-            if let placeholder = element["placeholder"] as? String, !placeholder.isEmpty {
-                attrs.append("placeholder=\"\(placeholder)\"")
-            }
-            if let href = element["href"] as? String, !href.isEmpty, type == "link" {
-                attrs.append("href=\"\(href)\"")
-            }
-            if let value = element["value"] as? String, !value.isEmpty {
-                attrs.append("value=\"\(value)\"")
-            }
-            if element["checked"] as? Bool == true {
-                attrs.append("checked")
-            }
-            if element["disabled"] as? Bool == true {
-                attrs.append("disabled")
-            }
-            if element["required"] as? Bool == true {
-                attrs.append("required")
-            }
-
-            if !attrs.isEmpty {
-                line += " " + attrs.joined(separator: " ")
-            }
-
-            output += line + "\n"
-        }
-
-        if hasMore {
-            output += "\n... (more elements available, use filter or increase max_elements)"
-        }
-
-        return output
+        return formatSnapshotOutput(data, detail: detail)
     }
 
     // MARK: - Element Interactions (Ref-based)
@@ -1277,7 +1222,7 @@ private class HeadlessBrowser: NSObject, WKNavigationDelegate {
 
 // MARK: - JSON Helpers
 
-private func escapeJSON(_ s: String) -> String {
+func escapeJSON(_ s: String) -> String {
     return
         s
         .replacingOccurrences(of: "\\", with: "\\\\")
@@ -1287,7 +1232,7 @@ private func escapeJSON(_ s: String) -> String {
         .replacingOccurrences(of: "\t", with: "\\t")
 }
 
-private func toJSONString(_ value: Any?) -> String {
+func toJSONString(_ value: Any?) -> String {
     guard let value = value else { return "null" }
 
     if let string = value as? String {
@@ -1307,9 +1252,208 @@ private func toJSONString(_ value: Any?) -> String {
     }
 }
 
+// MARK: - Snapshot Formatting
+
+func formatSnapshotOutput(_ data: [String: Any], detail: DetailLevel) -> String {
+    let title = data["title"] as? String ?? ""
+    let url = data["url"] as? String ?? ""
+    let hasMore = data["hasMore"] as? Bool ?? false
+    let bodyText = data["bodyText"] as? String ?? ""
+
+    switch detail {
+    case .none:
+        return ""
+
+    case .compact:
+        var output = "- page: \(title) | url: \(url)\n"
+
+        guard let elements = data["elements"] as? [[String: Any]], !elements.isEmpty else {
+            return output + "(no interactive elements found)"
+        }
+
+        var parts: [String] = []
+        for element in elements {
+            let ref = element["ref"] as? String ?? ""
+            let type = element["type"] as? String ?? ""
+            let text = element["text"] as? String ?? ""
+            let truncText = text.count > 20 ? String(text.prefix(20)) + "..." : text
+
+            if !truncText.isEmpty {
+                parts.append("[\(ref)] \(type) \"\(truncText)\"")
+            } else {
+                parts.append("[\(ref)] \(type)")
+            }
+        }
+
+        output += parts.joined(separator: " ")
+        if hasMore {
+            output += " ..."
+        }
+        return output
+
+    case .standard:
+        var output = ""
+        output += "- page: \(title)\n"
+        output += "- url: \(url)\n\n"
+
+        guard let elements = data["elements"] as? [[String: Any]], !elements.isEmpty else {
+            return output + "(no interactive elements found)"
+        }
+
+        for element in elements {
+            let ref = element["ref"] as? String ?? ""
+            let type = element["type"] as? String ?? ""
+            let text = element["text"] as? String ?? ""
+
+            var line = "[\(ref)] \(type)"
+
+            if !text.isEmpty {
+                line += " \"\(text)\""
+            }
+
+            var attrs: [String] = []
+            if let name = element["name"] as? String, !name.isEmpty {
+                attrs.append("name=\"\(name)\"")
+            }
+            if let placeholder = element["placeholder"] as? String, !placeholder.isEmpty {
+                attrs.append("placeholder=\"\(placeholder)\"")
+            }
+            if let href = element["href"] as? String, !href.isEmpty, type == "link" {
+                attrs.append("href=\"\(href)\"")
+            }
+            if let value = element["value"] as? String, !value.isEmpty {
+                attrs.append("value=\"\(value)\"")
+            }
+            if element["checked"] as? Bool == true {
+                attrs.append("checked")
+            }
+            if element["disabled"] as? Bool == true {
+                attrs.append("disabled")
+            }
+            if element["required"] as? Bool == true {
+                attrs.append("required")
+            }
+
+            if !attrs.isEmpty {
+                line += " " + attrs.joined(separator: " ")
+            }
+
+            output += line + "\n"
+        }
+
+        if hasMore {
+            output += "\n... (more elements available, use filter or increase max_elements)"
+        }
+
+        return output
+
+    case .full:
+        var output = ""
+        output += "- page: \(title)\n"
+        output += "- url: \(url)\n"
+
+        if !bodyText.isEmpty {
+            let truncBody = bodyText.count > 200 ? String(bodyText.prefix(200)) + "..." : bodyText
+            let singleLine =
+                truncBody
+                .replacingOccurrences(of: "\n", with: " ")
+                .replacingOccurrences(of: "  ", with: " ")
+            output += "- text: \(singleLine)\n"
+        }
+
+        output += "\n"
+
+        guard let elements = data["elements"] as? [[String: Any]], !elements.isEmpty else {
+            return output + "(no interactive elements found)"
+        }
+
+        for element in elements {
+            let ref = element["ref"] as? String ?? ""
+            let type = element["type"] as? String ?? ""
+            let text = element["text"] as? String ?? ""
+
+            var line = "[\(ref)] \(type)"
+
+            if !text.isEmpty {
+                line += " \"\(text)\""
+            }
+
+            var attrs: [String] = []
+            if let name = element["name"] as? String, !name.isEmpty {
+                attrs.append("name=\"\(name)\"")
+            }
+            if let id = element["id"] as? String, !id.isEmpty {
+                attrs.append("id=\"\(id)\"")
+            }
+            if let placeholder = element["placeholder"] as? String, !placeholder.isEmpty {
+                attrs.append("placeholder=\"\(placeholder)\"")
+            }
+            if let href = element["href"] as? String, !href.isEmpty {
+                attrs.append("href=\"\(href)\"")
+            }
+            if let value = element["value"] as? String, !value.isEmpty {
+                attrs.append("value=\"\(value)\"")
+            }
+            if let ariaLabel = element["ariaLabel"] as? String, !ariaLabel.isEmpty {
+                attrs.append("aria-label=\"\(ariaLabel)\"")
+            }
+            if element["checked"] as? Bool == true {
+                attrs.append("checked")
+            }
+            if element["disabled"] as? Bool == true {
+                attrs.append("disabled")
+            }
+            if element["required"] as? Bool == true {
+                attrs.append("required")
+            }
+
+            if !attrs.isEmpty {
+                line += " " + attrs.joined(separator: " ")
+            }
+
+            output += line + "\n"
+        }
+
+        if hasMore {
+            output += "\n... (more elements available, use filter or increase max_elements)"
+        }
+
+        return output
+    }
+}
+
 // MARK: - Plugin Context
 
-private class PluginContext {
+class PluginContext {
+    /// Returns the plugin manifest JSON string for testing
+    static func getManifestJSON() -> String {
+        // Trigger the manifest generation through the C ABI
+        let entryPtr = osaurus_plugin_entry()
+        guard let ptr = entryPtr else { return "{}" }
+
+        // The api struct has 5 function pointers in order:
+        // free_string, init, destroy, get_manifest, invoke
+        let apiBase = ptr.assumingMemoryBound(to: Optional<UnsafeRawPointer>.self)
+
+        // get_manifest is at offset 3
+        guard let getManifestRaw = apiBase.advanced(by: 3).pointee else { return "{}" }
+
+        typealias GetManifestFn = @convention(c) (UnsafeMutableRawPointer?) -> UnsafePointer<CChar>?
+        let getManifest = unsafeBitCast(getManifestRaw, to: GetManifestFn.self)
+
+        guard let cStr = getManifest(nil) else { return "{}" }
+        let result = String(cString: cStr)
+
+        // free_string is at offset 0
+        if let freeStringRaw = apiBase.advanced(by: 0).pointee {
+            typealias FreeStringFn = @convention(c) (UnsafePointer<CChar>?) -> Void
+            let freeString = unsafeBitCast(freeStringRaw, to: FreeStringFn.self)
+            freeString(cStr)
+        }
+
+        return result
+    }
+
     lazy var browser: HeadlessBrowser = {
         // Ensure NSApplication is initialized for WebKit
         if NSApp == nil {
@@ -1320,6 +1464,21 @@ private class PluginContext {
         return HeadlessBrowser()
     }()
 
+    // MARK: - Helpers
+
+    func parseDetail(_ detail: String?, default defaultLevel: DetailLevel = .compact) -> DetailLevel {
+        guard let detail = detail else { return defaultLevel }
+        return DetailLevel(rawValue: detail) ?? defaultLevel
+    }
+
+    func autoSnapshot(detail: DetailLevel, actionPrefix: String) -> String {
+        if detail == .none {
+            return actionPrefix
+        }
+        let snapshot = browser.takeSnapshot(detail: detail)
+        return actionPrefix + "\n" + snapshot
+    }
+
     // MARK: - Tool Implementations
 
     func navigate(args: String) -> String {
@@ -1327,6 +1486,7 @@ private class PluginContext {
             let url: String
             let wait_until: String?
             let timeout: Double?
+            let detail: String?
         }
 
         guard let data = args.data(using: .utf8),
@@ -1342,8 +1502,8 @@ private class PluginContext {
             return "{\"error\": \"\(escapeJSON(result.error ?? "Unknown error"))\"}"
         }
 
-        return
-            "{\"success\": true, \"url\": \"\(escapeJSON(browser.currentURL ?? input.url))\", \"title\": \"\(escapeJSON(browser.currentTitle ?? ""))\"}"
+        let detail = parseDetail(input.detail)
+        return autoSnapshot(detail: detail, actionPrefix: "Action: navigate to \(input.url) succeeded")
     }
 
     func snapshot(args: String) -> String {
@@ -1351,6 +1511,7 @@ private class PluginContext {
             let filter: String?
             let max_elements: Int?
             let visible_only: Bool?
+            let detail: String?
         }
 
         let input: Args
@@ -1359,7 +1520,7 @@ private class PluginContext {
         {
             input = decoded
         } else {
-            input = Args(filter: nil, max_elements: nil, visible_only: nil)
+            input = Args(filter: nil, max_elements: nil, visible_only: nil, detail: nil)
         }
 
         var options = HeadlessBrowser.SnapshotOptions()
@@ -1367,7 +1528,8 @@ private class PluginContext {
         if let maxElements = input.max_elements { options.maxElements = maxElements }
         if let visibleOnly = input.visible_only { options.visibleOnly = visibleOnly }
 
-        let result = browser.takeSnapshot(options: options)
+        let detail = parseDetail(input.detail, default: .standard)
+        let result = browser.takeSnapshot(options: options, detail: detail)
         return result
     }
 
@@ -1375,6 +1537,7 @@ private class PluginContext {
         struct Args: Decodable {
             let ref: String?
             let selector: String?
+            let detail: String?
         }
 
         guard let data = args.data(using: .utf8),
@@ -1389,7 +1552,11 @@ private class PluginContext {
             return "{\"error\": \"\(escapeJSON(result.error ?? "Unknown error"))\"}"
         }
 
-        return "{\"success\": true}"
+        // Brief DOM stability wait for click-triggered changes
+        Thread.sleep(forTimeInterval: 0.2)
+
+        let detail = parseDetail(input.detail)
+        return autoSnapshot(detail: detail, actionPrefix: "Action: click succeeded")
     }
 
     func type(args: String) -> String {
@@ -1399,6 +1566,7 @@ private class PluginContext {
             let text: String
             let clear: Bool?
             let submit: Bool?
+            let detail: String?
         }
 
         guard let data = args.data(using: .utf8),
@@ -1419,7 +1587,8 @@ private class PluginContext {
             return "{\"error\": \"\(escapeJSON(result.error ?? "Unknown error"))\"}"
         }
 
-        return "{\"success\": true}"
+        let detail = parseDetail(input.detail)
+        return autoSnapshot(detail: detail, actionPrefix: "Action: type succeeded")
     }
 
     func select(args: String) -> String {
@@ -1427,6 +1596,7 @@ private class PluginContext {
             let ref: String?
             let selector: String?
             let values: [String]
+            let detail: String?
         }
 
         guard let data = args.data(using: .utf8),
@@ -1441,13 +1611,15 @@ private class PluginContext {
             return "{\"error\": \"\(escapeJSON(result.error ?? "Unknown error"))\"}"
         }
 
-        return "{\"success\": true}"
+        let detail = parseDetail(input.detail)
+        return autoSnapshot(detail: detail, actionPrefix: "Action: select succeeded")
     }
 
     func hover(args: String) -> String {
         struct Args: Decodable {
             let ref: String?
             let selector: String?
+            let detail: String?
         }
 
         guard let data = args.data(using: .utf8),
@@ -1462,7 +1634,8 @@ private class PluginContext {
             return "{\"error\": \"\(escapeJSON(result.error ?? "Unknown error"))\"}"
         }
 
-        return "{\"success\": true}"
+        let detail = parseDetail(input.detail)
+        return autoSnapshot(detail: detail, actionPrefix: "Action: hover succeeded")
     }
 
     func scroll(args: String) -> String {
@@ -1471,6 +1644,7 @@ private class PluginContext {
             let ref: String?
             let x: Int?
             let y: Int?
+            let detail: String?
         }
 
         guard let data = args.data(using: .utf8),
@@ -1485,7 +1659,8 @@ private class PluginContext {
             return "{\"error\": \"\(escapeJSON(result.error ?? "Unknown error"))\"}"
         }
 
-        return "{\"success\": true}"
+        let detail = parseDetail(input.detail)
+        return autoSnapshot(detail: detail, actionPrefix: "Action: scroll succeeded")
     }
 
     func pressKey(args: String) -> String {
@@ -1617,6 +1792,121 @@ private class PluginContext {
 
         return "{\"result\": \(toJSONString(result.result))}"
     }
+
+    // MARK: - Batch Actions
+
+    func batchDo(args: String) -> String {
+        struct ActionItem: Decodable {
+            let action: String
+            let ref: String?
+            let selector: String?
+            let text: String?
+            let values: [String]?
+            let key: String?
+            let modifiers: [String]?
+            let direction: String?
+            let x: Int?
+            let y: Int?
+            let clear: Bool?
+            let submit: Bool?
+            let time: Double?
+            let timeout: Double?
+            let text_gone: String?
+        }
+
+        struct Args: Decodable {
+            let actions: [ActionItem]
+            let detail: String?
+            let wait_after: String?
+        }
+
+        guard let data = args.data(using: .utf8),
+            let input = try? JSONDecoder().decode(Args.self, from: data)
+        else {
+            return "{\"error\": \"Invalid arguments. Required: actions (array)\"}"
+        }
+
+        let detail = parseDetail(input.detail)
+
+        if input.actions.isEmpty {
+            return autoSnapshot(detail: detail, actionPrefix: "Action: browser_do completed (0 actions)")
+        }
+
+        for (index, action) in input.actions.enumerated() {
+            let result: (success: Bool, error: String?)
+
+            switch action.action {
+            case "click":
+                result = browser.clickElement(ref: action.ref, selector: action.selector)
+            case "type":
+                guard let text = action.text else {
+                    let snapshot = browser.takeSnapshot(detail: detail)
+                    return "Error: Action \(index) (type) missing required 'text' parameter\n\n\(snapshot)"
+                }
+                result = browser.typeText(
+                    ref: action.ref,
+                    selector: action.selector,
+                    text: text,
+                    clear: action.clear ?? true,
+                    submit: action.submit ?? false
+                )
+            case "select":
+                guard let values = action.values else {
+                    let snapshot = browser.takeSnapshot(detail: detail)
+                    return "Error: Action \(index) (select) missing required 'values' parameter\n\n\(snapshot)"
+                }
+                result = browser.selectOption(ref: action.ref, selector: action.selector, values: values)
+            case "hover":
+                result = browser.hoverElement(ref: action.ref, selector: action.selector)
+            case "scroll":
+                result = browser.scroll(
+                    direction: action.direction, ref: action.ref, x: action.x, y: action.y)
+            case "press_key":
+                guard let key = action.key else {
+                    let snapshot = browser.takeSnapshot(detail: detail)
+                    return "Error: Action \(index) (press_key) missing required 'key' parameter\n\n\(snapshot)"
+                }
+                result = browser.pressKey(key: key, modifiers: action.modifiers ?? [])
+            case "wait_for":
+                result = browser.waitFor(
+                    text: action.text,
+                    textGone: action.text_gone,
+                    time: action.time,
+                    timeout: action.timeout ?? 10
+                )
+            default:
+                let snapshot = browser.takeSnapshot(detail: detail)
+                return "Error: Action \(index) has unknown action type '\(action.action)'\n\n\(snapshot)"
+            }
+
+            if !result.success {
+                let snapshot = browser.takeSnapshot(detail: detail)
+                return
+                    "Error: Action \(index) (\(action.action)) failed: \(result.error ?? "Unknown error")\n\n\(snapshot)"
+            }
+        }
+
+        // Optional wait after all actions
+        if let waitAfter = input.wait_after {
+            switch waitAfter {
+            case "domstable":
+                browser.waitForDOMStable(timeout: 10)
+            case "networkidle":
+                browser.waitForNetworkIdle(timeout: 10)
+            default:
+                break
+            }
+        }
+
+        // Brief stability wait if last action was a click
+        if let lastAction = input.actions.last, lastAction.action == "click" {
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+
+        return autoSnapshot(
+            detail: detail,
+            actionPrefix: "Action: browser_do completed (\(input.actions.count) actions)")
+    }
 }
 
 // MARK: - C ABI
@@ -1669,7 +1959,7 @@ private var api: osr_plugin_api = {
             {
               "plugin_id": "osaurus.browser",
               "name": "Browser",
-              "description": "Agent-friendly headless browser with ref-based interactions",
+              "description": "Agent-friendly headless browser with ref-based interactions. Actions auto-return page snapshots so you rarely need to call browser_snapshot separately.",
               "license": "MIT",
               "authors": ["Dinoki Labs"],
               "min_macos": "13.0",
@@ -1678,13 +1968,14 @@ private var api: osr_plugin_api = {
                 "tools": [
                   {
                     "id": "browser_navigate",
-                    "description": "Navigate to a URL. Use wait_until='networkidle' for SPAs.",
+                    "description": "Navigate to a URL and return a page snapshot with element refs. Use wait_until='networkidle' for SPAs. Use detail to control snapshot verbosity.",
                     "parameters": {
                       "type": "object",
                       "properties": {
                         "url": {"type": "string", "description": "URL to navigate to"},
                         "wait_until": {"type": "string", "enum": ["load", "networkidle", "domstable"], "description": "When to consider navigation done"},
-                        "timeout": {"type": "number", "description": "Timeout in seconds (default 30)"}
+                        "timeout": {"type": "number", "description": "Timeout in seconds (default 30)"},
+                        "detail": {"type": "string", "enum": ["none", "compact", "standard", "full"], "description": "Snapshot verbosity: none (action result only), compact (single-line refs, default), standard (multi-line with attributes), full (all attributes + page text)"}
                       },
                       "required": ["url"]
                     },
@@ -1693,13 +1984,14 @@ private var api: osr_plugin_api = {
                   },
                   {
                     "id": "browser_snapshot",
-                    "description": "Get a structured list of interactive elements on the page. CALL THIS FIRST after navigating. Returns element refs (E1, E2, etc.) that you use in click/type/select. Each element shows its type, text, and key attributes.",
+                    "description": "Get a structured snapshot of interactive elements. Usually not needed since action tools return snapshots automatically. Use when you need to re-inspect without acting.",
                     "parameters": {
                       "type": "object",
                       "properties": {
                         "filter": {"type": "string", "enum": ["all", "inputs", "buttons", "links", "forms"], "description": "Filter element types (default: all)"},
                         "max_elements": {"type": "number", "description": "Max elements to return (default: 100)"},
-                        "visible_only": {"type": "boolean", "description": "Only visible elements (default: true)"}
+                        "visible_only": {"type": "boolean", "description": "Only visible elements (default: true)"},
+                        "detail": {"type": "string", "enum": ["none", "compact", "standard", "full"], "description": "Snapshot verbosity (default: standard)"}
                       },
                       "required": []
                     },
@@ -1708,12 +2000,13 @@ private var api: osr_plugin_api = {
                   },
                   {
                     "id": "browser_click",
-                    "description": "Click an element using its ref from browser_snapshot (preferred) or a CSS selector.",
+                    "description": "Click an element and return updated page snapshot.",
                     "parameters": {
                       "type": "object",
                       "properties": {
                         "ref": {"type": "string", "description": "Element ref from snapshot (e.g., 'E5')"},
-                        "selector": {"type": "string", "description": "CSS selector (fallback if ref not available)"}
+                        "selector": {"type": "string", "description": "CSS selector (fallback if ref not available)"},
+                        "detail": {"type": "string", "enum": ["none", "compact", "standard", "full"], "description": "Snapshot verbosity (default: compact)"}
                       },
                       "required": []
                     },
@@ -1722,7 +2015,7 @@ private var api: osr_plugin_api = {
                   },
                   {
                     "id": "browser_type",
-                    "description": "Type text into an input element. Use submit=true to press Enter after typing.",
+                    "description": "Type text into an input element and return updated page snapshot. Use submit=true to press Enter after typing.",
                     "parameters": {
                       "type": "object",
                       "properties": {
@@ -1730,7 +2023,8 @@ private var api: osr_plugin_api = {
                         "selector": {"type": "string", "description": "CSS selector (fallback)"},
                         "text": {"type": "string", "description": "Text to type"},
                         "clear": {"type": "boolean", "description": "Clear existing text first (default: true)"},
-                        "submit": {"type": "boolean", "description": "Press Enter after typing (default: false)"}
+                        "submit": {"type": "boolean", "description": "Press Enter after typing (default: false)"},
+                        "detail": {"type": "string", "enum": ["none", "compact", "standard", "full"], "description": "Snapshot verbosity (default: compact)"}
                       },
                       "required": ["text"]
                     },
@@ -1739,13 +2033,14 @@ private var api: osr_plugin_api = {
                   },
                   {
                     "id": "browser_select",
-                    "description": "Select option(s) in a dropdown by value or visible text.",
+                    "description": "Select option(s) in a dropdown and return updated page snapshot.",
                     "parameters": {
                       "type": "object",
                       "properties": {
                         "ref": {"type": "string", "description": "Element ref from snapshot"},
                         "selector": {"type": "string", "description": "CSS selector (fallback)"},
-                        "values": {"type": "array", "items": {"type": "string"}, "description": "Values or text to select"}
+                        "values": {"type": "array", "items": {"type": "string"}, "description": "Values or text to select"},
+                        "detail": {"type": "string", "enum": ["none", "compact", "standard", "full"], "description": "Snapshot verbosity (default: compact)"}
                       },
                       "required": ["values"]
                     },
@@ -1754,12 +2049,13 @@ private var api: osr_plugin_api = {
                   },
                   {
                     "id": "browser_hover",
-                    "description": "Hover over an element to reveal menus, tooltips, or trigger hover states.",
+                    "description": "Hover over an element and return updated page snapshot.",
                     "parameters": {
                       "type": "object",
                       "properties": {
                         "ref": {"type": "string", "description": "Element ref from snapshot"},
-                        "selector": {"type": "string", "description": "CSS selector (fallback)"}
+                        "selector": {"type": "string", "description": "CSS selector (fallback)"},
+                        "detail": {"type": "string", "enum": ["none", "compact", "standard", "full"], "description": "Snapshot verbosity (default: compact)"}
                       },
                       "required": []
                     },
@@ -1768,19 +2064,57 @@ private var api: osr_plugin_api = {
                   },
                   {
                     "id": "browser_scroll",
-                    "description": "Scroll the page by direction, to an element, or to coordinates. Use to load lazy content or find off-screen elements.",
+                    "description": "Scroll the page and return updated page snapshot.",
                     "parameters": {
                       "type": "object",
                       "properties": {
                         "direction": {"type": "string", "enum": ["up", "down", "left", "right"], "description": "Scroll direction"},
                         "ref": {"type": "string", "description": "Scroll to bring this element into view"},
                         "x": {"type": "number", "description": "X coordinate to scroll to"},
-                        "y": {"type": "number", "description": "Y coordinate to scroll to"}
+                        "y": {"type": "number", "description": "Y coordinate to scroll to"},
+                        "detail": {"type": "string", "enum": ["none", "compact", "standard", "full"], "description": "Snapshot verbosity (default: compact)"}
                       },
                       "required": []
                     },
                     "requirements": [],
                     "permission_policy": "allow"
+                  },
+                  {
+                    "id": "browser_do",
+                    "description": "Execute multiple browser actions in sequence and return a single snapshot at the end. Use to batch interactions (type, click, select, etc.) in one call. All refs from the previous snapshot remain valid throughout the batch. If any action fails, execution stops and returns the error with a snapshot.",
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "actions": {
+                          "type": "array",
+                          "description": "Ordered list of actions to execute",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "action": {"type": "string", "enum": ["click", "type", "select", "hover", "scroll", "press_key", "wait_for"], "description": "Action type"},
+                              "ref": {"type": "string", "description": "Element ref from snapshot"},
+                              "selector": {"type": "string", "description": "CSS selector (fallback)"},
+                              "text": {"type": "string", "description": "Text for type action, or text to wait for in wait_for"},
+                              "values": {"type": "array", "items": {"type": "string"}, "description": "Values for select action"},
+                              "key": {"type": "string", "description": "Key for press_key action"},
+                              "modifiers": {"type": "array", "items": {"type": "string"}, "description": "Modifier keys for press_key"},
+                              "direction": {"type": "string", "description": "Direction for scroll"},
+                              "clear": {"type": "boolean", "description": "Clear before typing (default: true)"},
+                              "submit": {"type": "boolean", "description": "Submit after typing"},
+                              "time": {"type": "number", "description": "Wait time in seconds"},
+                              "timeout": {"type": "number", "description": "Wait timeout in seconds"},
+                              "text_gone": {"type": "string", "description": "Wait for text to disappear"}
+                            },
+                            "required": ["action"]
+                          }
+                        },
+                        "detail": {"type": "string", "enum": ["none", "compact", "standard", "full"], "description": "Snapshot verbosity for final result (default: compact)"},
+                        "wait_after": {"type": "string", "enum": ["none", "domstable", "networkidle"], "description": "Wait condition after last action before snapshotting"}
+                      },
+                      "required": ["actions"]
+                    },
+                    "requirements": [],
+                    "permission_policy": "ask"
                   },
                   {
                     "id": "browser_press_key",
@@ -1885,6 +2219,8 @@ private var api: osr_plugin_api = {
             return makeCString(ctx.screenshot(args: payload))
         case "browser_execute_script":
             return makeCString(ctx.executeScript(args: payload))
+        case "browser_do":
+            return makeCString(ctx.batchDo(args: payload))
         default:
             return makeCString("{\"error\": \"Unknown tool: \(id)\"}")
         }
