@@ -11,47 +11,57 @@
     "tools": [
       {
         "name": "browser_navigate",
-        "description": "Navigate to a URL. Use wait_until='networkidle' for SPAs that load content dynamically."
+        "description": "Navigate to a URL and return a page snapshot with element refs. Use wait_until='networkidle' for SPAs. Use detail to control snapshot verbosity."
       },
       {
         "name": "browser_snapshot",
-        "description": "Get a structured list of interactive elements. CALL THIS FIRST after navigating. Returns element refs (E1, E2...) to use in click/type/select. Use filter to narrow down element types."
+        "description": "Get a structured snapshot of interactive elements. Usually not needed since action tools return snapshots automatically. Use when you need to re-inspect without acting."
       },
       {
         "name": "browser_click",
-        "description": "Click an element using its ref from browser_snapshot (e.g., ref='E5')."
+        "description": "Click an element and return updated page snapshot."
       },
       {
         "name": "browser_type",
-        "description": "Type text into an input using its ref. Set submit=true to press Enter after typing."
+        "description": "Type text into an input element and return updated page snapshot. Use submit=true to press Enter after typing."
       },
       {
         "name": "browser_select",
-        "description": "Select option(s) in a dropdown by value or visible text."
+        "description": "Select option(s) in a dropdown and return updated page snapshot."
       },
       {
         "name": "browser_hover",
-        "description": "Hover over an element to reveal menus, tooltips, or trigger hover states."
+        "description": "Hover over an element and return updated page snapshot."
       },
       {
         "name": "browser_scroll",
-        "description": "Scroll the page by direction (up/down/left/right), to an element ref, or to x/y coordinates."
+        "description": "Scroll the page and return updated page snapshot."
+      },
+      {
+        "name": "browser_do",
+        "description": "Execute multiple browser actions in sequence and return a single snapshot at the end. Use to batch interactions (type, click, select, etc.) in one call. All refs from the previous snapshot remain valid throughout the batch. If any action fails, execution stops and returns the error with a snapshot."
       },
       {
         "name": "browser_press_key",
-        "description": "Press a keyboard key (Enter, Escape, Tab, arrows) optionally with modifiers (ctrl, shift, alt, cmd)."
+        "description": "Press a keyboard key. Useful for Enter, Escape, Tab, arrow keys, or shortcuts."
       },
       {
         "name": "browser_wait_for",
-        "description": "Wait for text to appear, text to disappear, or for a specified number of seconds."
+        "description": "Wait for text to appear, disappear, or for a specified time."
       },
       {
         "name": "browser_screenshot",
-        "description": "Take a screenshot for visual debugging. Use full_page=true for the entire scrollable page."
+        "description": "Take a screenshot for visual debugging. Use full_page=true for entire page."
       },
       {
         "name": "browser_execute_script",
         "description": "Execute arbitrary JavaScript. Use as escape hatch for edge cases not covered by other tools."
+      }
+    ],
+    "skills": [
+      {
+        "name": "osaurus-browser",
+        "description": "Teaches the agent how to use the headless browser tools effectively — workflows, element refs, batching, and detail levels."
       }
     ]
   },
@@ -136,9 +146,27 @@
           }
         }
       ]
+    },
+    {
+      "version": "1.2.0",
+      "release_date": "2026-02-17",
+      "artifacts": [
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://github.com/dinoki-ai/osaurus-tools/releases/download/browser-1.2.0/osaurus.browser-1.2.0-macos-arm64.zip",
+          "sha256": "e3933e39ed254e70aeb88f6326d51ac33fae5ba295e7fca002928387f3f9a215",
+          "size": 103393,
+          "min_macos": "13.0",
+          "minisign": {
+            "signature": "untrusted comment: signature from minisign secret key\nRWTBNLjKflgtwBMU9Z9pkxNScQ/TxcHou0noOoClSEJ08h8ABlrWRRYjrG/Y4UlYmnmGrb0ULuXdCQXKW1Ypg2gL73mdqgEi4QA=\ntrusted comment: timestamp:1771362232\tfile:osaurus.browser-1.2.0-macos-arm64.zip\nGJxC2wzV6hV3FILUiXrJBObfS86EJHcz0rpozqSr1uzV03fEkdbjVNOjtQQ87uPGWy9EXb7rbZ/yEh9kNyZOAg=="
+          }
+        }
+      ]
     }
   ],
   "public_keys": {
     "minisign": "RWTBNLjKflgtwJIKPYHuGjVNR8Huce4PvIRgLzxsd5DrdvB+I5KjeeC3"
-  }
+  },
+  "skill": "---\nname: osaurus-browser\ndescription: Teaches the agent how to use the headless browser tools effectively — workflows, element refs, batching, and detail levels.\nmetadata:\n  author: Osaurus\n  version: \"1.2.0\"\n---\n\n# Osaurus Browser\n\nHeadless browser automation via element refs. Every action returns a page snapshot automatically — you rarely need to call `browser_snapshot` separately.\n\n## Typical Flow (2 calls)\n\n```\n1. browser_navigate(url)             → snapshot with refs [E1] [E2] [E3]\n2. browser_do([type E1, type E2, click E3]) → snapshot of result page\n```\n\n## Key Concepts\n\n**Element refs** — `browser_navigate` and all actions return refs like `[E1] input`, `[E2] button \"Submit\"`. Use these refs in subsequent calls.\n\n**Detail levels** — Every tool accepts `detail` to control snapshot verbosity:\n\n- `none` — action result only, no snapshot (~10 tokens)\n- `compact` — single-line refs, default for actions (~200 tokens)\n- `standard` — multi-line with attributes, default for `browser_snapshot` (~500 tokens)\n- `full` — all attributes + IDs + aria-labels + page text excerpt (~1000+ tokens)\n\nUse `compact` (default) for speed. Use `full` when you need to identify elements by ID or aria-label on complex pages.\n\n## Tools\n\n### browser_navigate\n\nNavigate and get initial page snapshot.\n\n```json\n{ \"url\": \"https://example.com\", \"detail\": \"compact\" }\n```\n\nUse `wait_until: \"networkidle\"` for SPAs.\n\n### browser_do\n\n**Primary interaction tool.** Batch multiple actions in one call. All refs from the previous snapshot stay valid throughout the batch.\n\n```json\n{\n  \"actions\": [\n    { \"action\": \"type\", \"ref\": \"E1\", \"text\": \"user@example.com\" },\n    { \"action\": \"type\", \"ref\": \"E2\", \"text\": \"password123\" },\n    { \"action\": \"click\", \"ref\": \"E3\" }\n  ],\n  \"detail\": \"compact\"\n}\n```\n\nSupported actions: `click`, `type`, `select`, `hover`, `scroll`, `press_key`, `wait_for`.\n\nIf an action fails, execution stops and the response includes: which action failed (index), the error, and a snapshot of current state for recovery.\n\nUse `wait_after: \"domstable\"` or `\"networkidle\"` when the last action triggers async content.\n\n### browser_click / browser_type / browser_select / browser_hover / browser_scroll\n\nIndividual action tools — each returns a snapshot automatically. Prefer `browser_do` when performing 2+ actions in sequence.\n\n### browser_snapshot\n\nRe-inspect the page without acting. Usually not needed since actions auto-return snapshots. Use when you need to re-check after `browser_wait_for` or `browser_execute_script`.\n\n### browser_press_key\n\nPress keyboard keys: `Enter`, `Escape`, `Tab`, arrow keys, or characters with modifiers.\n\n### browser_wait_for\n\nWait for text to appear, disappear, or a specified time.\n\n### browser_screenshot\n\nVisual debugging — saves a PNG. Use `full_page: true` for the entire scrollable page.\n\n### browser_execute_script\n\nEscape hatch for arbitrary JavaScript.\n\n## Tips\n\n- Always start with `browser_navigate` — it gives you the refs you need.\n- Batch with `browser_do` to minimize round-trips. A login flow is just navigate + browser_do.\n- Use `detail: \"none\"` for intermediate actions where you already know the next step.\n- If refs go stale (page changed unexpectedly), call `browser_snapshot` to get fresh ones.\n- For SPAs, use `wait_until: \"networkidle\"` on navigate, or `wait_after: \"domstable\"` on browser_do."
 }
